@@ -1,0 +1,9 @@
+# Python env
+/env/
+
+# Binaries
+__pycache__/
+
+.ipynb_checkpoints/
+
+export.zip

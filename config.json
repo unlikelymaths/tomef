@@ -1,0 +1,459 @@
+{
+  "skip_existing": true,
+  "graceful_errors": true,
+  
+  "paths": {
+    "data_rel": "./data",
+    "rawdata_rel": "./data/raw",
+    "misc_rel": "./data/misc",
+    "embedding_rel": "./data/embedding",
+    "imported_rel": "./data/imported",
+    "tokenized_rel": "./data/tokenized",
+    "vocab_rel": "./data/vocab",
+    "vectorized_rel": "./data/vectorized",
+    "models_rel": "./data/models",
+    "topics_rel": "./data/topics",
+    "results_rel": "./results"
+  },
+  
+  "plots": {
+    "dpi": 500
+  },
+  
+  "datasets": {
+    "acm": {
+      "name": "ACM",
+      "run": true,
+      "labels": false,
+      "num_topics": [10],
+      "mod": "acm",
+      "cls": "ACMImporter"
+    },
+    "atd": {
+      "name": "ATD",
+      "run": false,
+      "labels": false,
+      "num_topics": [10],
+      "mod": "atd",
+      "cls": "ATDImporter"
+    },
+    "classic4": {
+      "name": "Classic4",
+      "run": true,
+      "labels": true,
+      "num_topics": ["gt"],
+      "mod": "classic4",
+      "cls": "ClassicImporter"
+    },
+    "complaints": {
+      "name": "Complaints",
+      "run": true,
+      "labels": true,
+      "num_topics": ["gt"],
+      "mod": "complaints",
+      "cls": "ComplaintsImporter",
+      "min_length": 10,
+      "min_class_size": 100
+    },
+    "newsgroup": {
+      "name": "20 Newsgroup",
+      "run": true,
+      "labels": true,
+      "num_topics": ["gt"],
+      "mod": "newsgroup",
+      "cls": "NewsgroupImporter",
+      "remove": [
+        "headers", 
+        "footers", 
+        "quotes"
+      ]
+    },
+    "reuters": {
+      "name": "Reuters",
+      "run": true,
+      "labels": true,
+      "num_topics": ["gt"],
+      "mod": "reuters",
+      "cls": "ReutersImporter",
+      "min_docs_per_class": 30
+    },
+    "tweetsla": {
+      "name": "TweetsLA",
+      "run": true,
+      "labels": false,
+      "num_topics": [30],
+      "mod": "tweetsla",
+      "cls": "TweetsLAImporter"
+    },
+    "tweetsodp": {
+      "name": "TweetsODP",
+      "run": true,
+      "labels": true,
+      "num_topics": ["gt"],
+      "mod": "tweetsodp",
+      "cls": "TweetsODPImporter",
+      "maxdepth": 1,
+      "max_docs_per_cls": 10000
+    },
+    "yahooL5": {
+      "name": "Yahoo Questions",
+      "run": true,
+      "labels": true,
+      "num_topics": ["gt"],
+      "mod": "yahoo",
+      "cls": "YahooImporter"
+    }
+  },
+  
+  "embeddings": {
+    "C": {
+      "w2v": {
+        "name": "Word2Vec",
+        "run": true,
+        "mod": "word2vec",
+        "cls": "Word2vecModel",
+        "token_info": {
+          "mod": "embedding_tokenizer",
+          "cls": "W2VTokenizer"
+        },
+        "filename": "word2vec.bin"
+      }
+    },
+    "P": {
+      "use": {
+        "name": "Universal Sentence Encoder",
+        "run": true,
+        "mod": "use",
+        "cls": "USEModel",
+        "module_url": "https://tfhub.dev/google/universal-sentence-encoder/2"
+      },
+      "bert": {
+        "name": "BERT",
+        "run": false,
+        "mod": "bert",
+        "cls": "BertModel"
+      }
+    }
+  },
+  
+  "importer": {
+    "run": true,
+    "wiki": {
+      "keep_words": 1000000,
+      "no_above": 1,
+      "no_below": 1
+    }
+  },
+  
+  "tokenizer": {
+    "run": true,
+    "numbers_info": "Possible values are: keep, replace, replace_single, drop",
+    "numbers_split_info": "Binary: split words between characters and numbers",
+    "lowercase_info": "Binary: Transform all characters to lowercase",
+    "ascii_only_info": "Binary: Remove all non ASCII characters",
+    "remove_accents_info": "Binary: Replace all accents",
+    "B": [
+      {
+        "run": true,
+        "mod": "default_tokenizer",
+        "cls": "DefaultTokenizer",
+        "numbers": "keep",
+        "numbers_split": true,
+        "urls": "skip",
+        "ascii_emotes": "skip",
+        "unicode_emotes": "skip",
+        "lowercase": true,
+        "alnum_only": true,
+        "ascii_only": false
+      },
+      {
+        "run": true,
+        "mod": "default_tokenizer",
+        "cls": "DefaultTokenizer",
+        "numbers": "replace_single",
+        "numbers_split": false,
+        "urls": "replace",
+        "ascii_emotes": "replace",
+        "unicode_emotes": "replace",
+        "lowercase": true,
+        "alnum_only": true,
+        "ascii_only": true
+      },
+      {
+        "run": true,
+        "mod": "pt_tokenizer",
+        "cls": "PTTokenizer"
+      }
+    ]
+  },
+  
+  "vocab": {
+    "run": true,
+    "B": [
+      {
+        "run": true,
+        "mod": "default_vocab_builder",
+        "cls": "DefaultVocabBuilder",
+        "min_docs": 2,
+        "max_docs": false,
+        "min_count": 4,
+        "min_word_length": 2,
+        "max_word_length": false,
+        "stopwords": "english",
+        "max_tokens": 10000
+      },
+      {
+        "run": true,
+        "mod": "default_vocab_builder",
+        "cls": "DefaultVocabBuilder",
+        "min_docs": 0.0001,
+        "max_docs": 0.4,
+        "min_count": 10,
+        "min_word_length": 3,
+        "max_word_length": 30,
+        "stopwords": "english",
+        "max_tokens": 5000
+      }
+    ],
+    "C": [
+      {
+        "run": true,
+        "mod": "default_vocab_builder",
+        "cls": "DefaultVocabBuilder",
+        "min_docs": 2,
+        "max_docs": false,
+        "min_count": 4,
+        "min_word_length": false,
+        "max_word_length": false,
+        "stopwords": "english",
+        "max_tokens": 10000
+      },
+      {
+        "run": true,
+        "mod": "default_vocab_builder",
+        "cls": "DefaultVocabBuilder",
+        "min_docs": 0.0001,
+        "max_docs": 0.4,
+        "min_count": 10,
+        "min_word_length": 2,
+        "max_word_length": 30,
+        "stopwords": "english",
+        "max_tokens": 5000
+      }
+    ]
+  },
+  
+  "vectorizer": {
+    "run": true,
+    "run_B": true,
+    "run_C": true,
+    "run_P": true,
+    "tf_info":  "Possible values are: raw,normalized,boolean,log",
+    "idf_info": "Possible values are: unary, idf",
+    "type_info": "Possible values are: TfIdf, MinMaxMean, FV",
+    "B": [
+      {
+        "run": true,
+        "tf": "raw",
+        "idf": "unary"
+      },
+      {
+        "run": true,
+        "tf": "normalized",
+        "idf": "unary"
+      },
+      {
+        "run": true,
+        "tf": "normalized",
+        "idf": "idf"
+      }
+    ],
+    "C": [
+      {
+        "run": true,
+        "type": "TfIdf",
+        "tf": "normalized",
+        "idf": "unary"
+      },
+      {
+        "run": true,
+        "type": "TfIdf",
+        "tf": "normalized",
+        "idf": "idf"
+      },
+      {
+        "run": true,
+        "type": "MinMaxMean"
+      },
+      {
+        "run": true,
+        "type": "FV"
+      }
+    ]
+  },
+  
+  "models": {
+    "run": true,
+    "list": {
+      "kmeans": {
+        "name": "K-Means (sklearn)",
+        "run": true,
+        "mod": "clustering",
+        "cls": "KMeans",
+        "vector": "CP"
+      },
+      "cmeans": {
+        "name": "C-Means (skfuzzy)",
+        "run": true,
+        "mod": "clustering",
+        "cls": "CMeans",
+        "vector": "CP"
+      },
+      "nmf": {
+        "name": "NMF (sklearn)",
+        "run": true,
+        "mod": "nmf",
+        "cls": "NMF",
+        "vector": "B"
+      },
+      "nmf-shift": {
+        "name": "NMF (sklearn) with positive shift",
+        "run": true,
+        "mod": "nmf",
+        "cls": "ShiftNMF",
+        "vector": "CP"
+      },
+      "nmf-we-naive": {
+        "name": "Wordembedding NMF (naive)",
+        "run": true,
+        "mod": "wenmf",
+        "cls": "WeNMF",
+        "vector": "B",
+        "token": "C"
+      },
+      "nmf-we-ortho": {
+        "name": "Wordembedding NMF (orthogonal)",
+        "run": false,
+        "mod": "wenmf",
+        "cls": "WeNMF",
+        "vector": "B",
+        "token": "C",
+        "null": "orthogonal"
+      },
+      "nmf-we-mean": {
+        "name": "Wordembedding NMF (distribution)",
+        "run": false,
+        "mod": "wenmf",
+        "cls": "WeNMF",
+        "vector": "B",
+        "token": "C",
+        "null": "mean"
+      },
+      "nmf-we-pl": {
+        "name": "Wordembedding NMF (prox linear)",
+        "run": true,
+        "mod": "wenmfpl",
+        "cls": "WeNMFpl",
+        "vector": "B",
+        "token": "C"
+      },
+      "lda": {
+        "name": "LDA (Gensim)",
+        "run": true,
+        "mod": "probabilistic",
+        "cls": "LDA",
+        "vector": "B"
+      },
+      "semi-nmf": {
+        "name": "Semi NMF",
+        "run": true,
+        "mod": "nmf",
+        "cls": "SemiNMF",
+        "vector": "CP"
+      }
+    }
+  },
+  
+  "distiller": {
+    "run": true,
+    "num_tokens": 100,
+    "list": {
+      "wmethod": {
+        "name": "W Method",
+        "run": true,
+        "mod": "wmethod",
+        "cls": "WMethod",
+        "model_out": ["W"]
+      },
+      "pwmethod": {
+        "name": "Pseudo W Method",
+        "run": false,
+        "mod": "pwmethod",
+        "cls": "PWMethod",
+        "model_out": ["H","c"],
+        "requires_bow": true
+      },
+      "igmi": {
+        "name": "Information Gain",
+        "run": true,
+        "mod": "igmethod",
+        "cls": "IGMutualInfo",
+        "model_out": ["H","c"],
+        "requires_bow": true
+      }
+    }
+  },
+  
+  "metrics": {
+    "run": true,
+    "num_tokens": [5,10,20,40],
+    "clustering": {
+      "nmi": {
+        "name": "NMI",
+        "run": true,
+        "mod": "clustering",
+        "fct": "nmi"
+      },
+      "ari": {
+        "name": "ARI",
+        "run": true,
+        "mod": "clustering",
+        "fct": "ari"
+      }
+    },
+    "classification": {
+      "svm_5fold_micro_f1": {
+          "name": "$F_1$-Score",
+          "run": true,
+          "mod": "classification",
+          "fct": "svm_5fold_micro_f1"
+      }
+    },
+    "coherence": {
+      "cv_wiki": {
+        "name": "Cv Coherence",
+        "run": false,
+        "mod": "coherence",
+        "fct": "cv_wiki"
+      },
+      "umass_wiki": {
+        "name": "UMass",
+        "run": true,
+        "mod": "coherence",
+        "fct": "umass_wiki"
+      }
+    },
+    "similarity": {
+      "mean_pairwise_jaccard": {
+        "name": "Similarity",
+        "run": true,
+        "mod": "topic_similarity",
+        "fct": "mean_pairwise_jaccard"
+      }
+    }
+  },
+  
+  "display": {
+    "run": false
+  }
+}
