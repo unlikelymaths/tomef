@@ -11,7 +11,7 @@
 # Execute this cell first. Runs Tools (command line use) and loads [config.json](./config.json).
 # Run again if you have changed the configuration.
 
-# In[4]:
+# In[ ]:
 
 
 try:
@@ -93,7 +93,7 @@ if config.models["run"]:
 # ## [Model Metrics](./metrics/metrics.ipynb)
 # Evaluates the results form the Models module.
 
-# In[5]:
+# In[ ]:
 
 
 if config.metrics["run"]:
