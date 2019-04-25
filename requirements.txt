@@ -4,7 +4,7 @@ backcall==0.1.0
 bleach==3.0.2
 boto==2.49.0
 boto3==1.9.11
-botocore==1.12.11
+botocore>=1.12.11
 bz2file==0.98
 certifi==2018.8.24
 chardet==3.0.4
@@ -66,7 +66,7 @@ pytorch-pretrained-bert==0.6.1
 pywinpty==0.5.5
 pyzmq==17.1.2
 regex==2019.3.12
-requests==2.19.1
+requests>=2.19.1
 s3transfer==0.1.13
 scikit-fuzzy==0.4.1
 scikit-learn==0.19.2
@@ -81,9 +81,8 @@ tensorflow-hub==0.2.0
 termcolor==1.1.0
 terminado==0.8.1
 testpath==0.4.2
-torch==1.0.1
-torchvision==0.2.2.post3
 tornado==5.1.1
+torch>=0.4.1
 tqdm==4.31.1
 traitlets==4.3.2
 urllib3==1.24.2
