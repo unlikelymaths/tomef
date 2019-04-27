@@ -7,6 +7,8 @@ import sys
 
 from base import nbprint
 
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
+
 ###############################################################################
 # Exceptions
 ###############################################################################
@@ -191,9 +193,7 @@ def _load_json(filename):
         metrics = jsonconfig["metrics"]
         display = jsonconfig["display"]
 
-def _set_paths():
-    dirname = os.path.dirname(__file__)
-    
+def _set_paths(dirname):
     oldpaths = paths.copy()
     for pathname,path_rel in oldpaths.items():
         if pathname.endswith("_rel"):
@@ -202,11 +202,15 @@ def _set_paths():
             paths[pathname[:-4]] = os.path.abspath(path)
             
 def load_config(filename = None):
+    config_dir = os.path.join(base_dir,'config')
+    data_base_dir = base_dir
     if filename is None:
-        filename = os.path.join(
-            os.path.dirname(__file__),
-            "config.json")
+        filename = os.path.join(config_dir,'default.json')
+    elif not os.path.isabs(filename):
+        filename = os.path.join(config_dir,filename)
+    else:
+        data_base_dir = os.path.dirname(filename)
     _load_json(filename)
-    _set_paths()
+    _set_paths(data_base_dir)
 
 load_config()
