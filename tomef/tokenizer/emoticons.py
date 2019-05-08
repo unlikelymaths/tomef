@@ -1,3 +1,4 @@
+from collections import defaultdict
 
 #based on: https://en.wikipedia.org/wiki/List_of_emoticons
 western = [':-))','O:-)','0:-)','>:-)',':-)','}:-)','3:-)',':-)',
@@ -13,3 +14,7 @@ western = [':-))','O:-)','0:-)','>:-)',':-)','}:-)','3:-)',':-)',
     ':-X',':X',':-#',':#',':-&',':&','0;^)',
     '>;)','|;-)','|-O',':-J','#-)','%-)','%)',':-###..',':###..','<:-|','\',:-|',
     '\',:-l','<_<','>_>']
+
+western_dict = defaultdict(list)
+for emote in western:
+    western_dict[emote[0]].append(emote[1:])

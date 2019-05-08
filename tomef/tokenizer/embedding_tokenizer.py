@@ -7,12 +7,12 @@ from tokenizer.default_tokenizer import DefaultTokenizer
 class W2VTokenizer(TokenizerBase):
     def initialize(self):
         self.default_tokenizer = DefaultTokenizer(
-            info = {'token_info': {'numbers': 'replace',
+            info = {'token_info': {'numbers': 'decimal-on-one',
                                    'numbers_split': False,
-                                   'links': 'drop',
+                                   'links': 'keep',
                                    'lowercase': False,
                                    'ascii_only': True,
-                                   'remove_accents': True}})
+                                   'alnum_only': 'weak'}})
         
         self.embedding_model = get_model(self.info)
         self.embedding_model.load_filter()

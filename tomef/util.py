@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from importlib import import_module
+from types import MethodType
 
 import config, data
 from base import nbprint
@@ -13,6 +14,19 @@ class UtilException(Exception):
 
 class BreakIteration(Exception):
     pass
+
+###############################################################################
+# Decorators
+###############################################################################
+
+def add_method(cls):
+    """Decorator. @add_method(cls) binds the following function to the class cls."""
+    def decorator(func):
+        #method = MethodType(func,cls)                                    
+        #setattr(cls, func.__name__, method)
+        setattr(cls, func.__name__, func)
+        return func
+    return decorator
 
 ###############################################################################
 # Progress bar in console and jupyter 

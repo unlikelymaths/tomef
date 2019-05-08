@@ -1,7 +1,7 @@
 from util import import_cls
 
-separator_token = ':'
-separator_token_replacement = ' '
+separator_token = ';'
+separator_token_replacement = ','
 number_token = '[NUM]'
 url_token = '[URL]'
 emote_token = '[EMOTE]'

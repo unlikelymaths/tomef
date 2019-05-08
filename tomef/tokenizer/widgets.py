@@ -183,15 +183,9 @@ def tokenize_document_widget(info, runvars):
     
     update_output()
 
-def get_value(obj, selector):
-    if isinstance (selector, list):
-        if len(selector) == 1:
-            return_val = obj[selector[0]]
-        else:
-            return_val = get_value(obj[selector[0]], selector[1:])
-    else:
-        return_val = obj[selector]
-    if isinstance(return_val,list):
+def get_attribute(obj, attribute):
+    return_val = getattr(obj, attribute)
+    if isinstance(return_val, list):
         return return_val.copy()
     return return_val
 
@@ -200,7 +194,7 @@ def list_to_string(value):
         return (separator_token + ' ').join(value)
     return value
     
-def show_comparison(before,after, before_label, after_label):
+def show_comparison(before, after, before_label, after_label):
     template = '''<table>
             <tr>
                 <td>{}</td>
@@ -219,8 +213,8 @@ def show_comparison(before,after, before_label, after_label):
                                  list_to_string(before),list_to_string(after))))
 
 
-def run_and_compare(runinfo, runvars, func, before_var, after_var, before_label='Before', after_label='After'):
-    before = get_value(runvars,before_var)
-    func(runinfo, runvars)
-    after = get_value(runvars,after_var)
-    show_comparison(before,after,before_label,after_label)
+def run_and_compare(tokenizer, func, before_attribute, after_attribute = None, before_label='Before', after_label='After'):
+    before = get_attribute(tokenizer, before_attribute)
+    func()
+    after = get_attribute(tokenizer, after_attribute or before_attribute)
+    show_comparison(before, after, before_label, after_label)

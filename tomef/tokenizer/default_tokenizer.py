@@ -26,12 +26,12 @@ import emoji
 import data
 import config
 from base import nbprint
-from util import ProgressIterator
+from util import ProgressIterator, add_method
 
 import tokenizer.common
 import tokenizer.emoticons
 from tokenizer.token_util import iterate_tokens, TokenizerBase
-from tokenizer.widgets import token_picker, run_and_compare
+from tokenizer.widgets import token_picker, run_and_compare, show_comparison
 
 if RUN_SCRIPT: token_picker(info, runvars)
 
@@ -39,23 +39,85 @@ if RUN_SCRIPT: token_picker(info, runvars)
 # ---
 # ## Tokenize Document
 # ---
-# The following functions consitute the `DefaultTokenizer` class that transforms the raw text of a document into tokens. The default options are:
+# The following functions consitute the `DefaultTokenizer` class that transforms the raw text of a document into tokens.
 
 # In[2]:
 
 
-default_options = {
-    'urls': 'skip',
-    'ascii_emotes': 'skip',
-    'unicode_emotes': 'skip',
-    'numbers': 'drop',
-    'lowercase': True,
-    'numbers_split': False,
-    'alnum_only': True,
-    'ascii_only': True,
-}
-def get_option(token_info, option_key):
-    return token_info.get(option_key, default_options[option_key])
+URLS_OPTIONS = ['skip', 'keep', 'domain', 'replace', 'drop']
+EMOTES_OPTIONS = ['skip', 'keep', 'replace', 'drop']
+ALNUM_OPTIONS = ['skip', 'weak', 'apostrophe', 'strict']
+NUMBERS_OPTIONS = ['skip', 'decimal-on-one', 'all-on-one', 'drop']
+
+class DefaultTokenizer(TokenizerBase):
+    
+    def __init__(self, info):
+        super().__init__(info)
+        token_info = info.get('token_info', {})
+        
+        self.urls = token_info.get('urls', 'skip')
+        try:
+            self.urls_idx = URLS_OPTIONS.index(self.urls)
+        except ValueError:
+            raise config.ConfigException(('Invalid DefaultTokenizer configuration option urls "{}". '
+                                          'Valid options are "{}".').format(self.urls, '", "'.join(URLS_OPTIONS)))
+        
+        self.ascii_emotes   = token_info.get('ascii_emotes', 'skip')
+        try:
+            self.ascii_emotes_idx = EMOTES_OPTIONS.index(self.ascii_emotes)
+        except ValueError:
+            raise config.ConfigException(('Invalid DefaultTokenizer configuration option ascii_emotes "{}". '
+                                          'Valid options are "{}".').format(self.ascii_emotes, '", "'.join(EMOTES_OPTIONS)))
+        
+        self.unicode_emotes = token_info.get('unicode_emotes', 'skip')
+        try:
+            self.unicode_emotes_idx = EMOTES_OPTIONS.index(self.unicode_emotes)
+        except ValueError:
+            raise config.ConfigException(('Invalid DefaultTokenizer configuration option unicode_emotes "{}". '
+                                          'Valid options are "{}".').format(self.unicode_emotes, '", "'.join(EMOTES_OPTIONS)))
+        
+        self.alnum_only     = token_info.get('alnum_only', True)
+        try:
+            self.alnum_only_idx = ALNUM_OPTIONS.index(self.alnum_only)
+        except ValueError:
+            raise config.ConfigException(('Invalid DefaultTokenizer configuration option alnum_only "{}". '
+                                          'Valid options are "{}".').format(self.alnum_only, '", "'.join(ALNUM_OPTIONS)))
+        
+        self.numbers        = token_info.get('numbers', 'skip')
+        try:
+            self.numbers_idx = NUMBERS_OPTIONS.index(self.numbers)
+        except ValueError:
+            raise config.ConfigException(('Invalid DefaultTokenizer configuration option numbers "{}". '
+                                          'Valid options are "{}".').format(self.numbers, '", "'.join(NUMBERS_OPTIONS)))
+        
+        
+        self.lowercase      = token_info.get('lowercase', True)
+        self.numbers_split  = token_info.get('numbers_split', False)
+        self.ascii_only     = token_info.get('ascii_only', True)
+        
+if RUN_SCRIPT:
+    default_tokenizer = DefaultTokenizer(info)
+
+
+# ### Prepare
+# 
+# Splits the text at whitespace and initializes an empty list of fixed tokens. The `separator_token` is replaced with the `separator_token_replacement`, so that it can be used for saving the tokens as a string, i.e.
+# ```
+# This:is:a:token:list
+# ```
+
+# In[3]:
+
+
+@add_method(DefaultTokenizer)
+def init_tokenization(self, text):
+    self.fixed_tokens = []
+    self.text = text.replace(tokenizer.common.separator_token,tokenizer.common.separator_token_replacement)
+    self.tokens = text.split()
+
+if RUN_SCRIPT:
+    default_tokenizer.init_tokenization(runvars['document']['text'])
+    show_comparison(default_tokenizer.text, default_tokenizer.tokens, 'Text', 'Tokens')
 
 
 # ### URLs
@@ -66,12 +128,12 @@ def get_option(token_info, option_key):
 # - `drop`: completely removes every URL from the text
 # - `replace`: replaces every URL with the URL Token
 
-# In[3]:
+# In[4]:
 
 
-def url_drop_fct(runvars, url_str):
-    pass
-def url_domain_fct(runvars, url_str):
+def _process_urls_keep_fct(url_str):
+    return url_str
+def _process_urls_domain_fct(url_str):
     for prefix in ['http://', 'https://']:
         url_str = url_str.replace(prefix,'')
     slash_index = url_str.find('/')
@@ -79,42 +141,36 @@ def url_domain_fct(runvars, url_str):
         url_str = url_str[:slash_index]
     if url_str.count('.') > 1:
         url_str = url_str[url_str.rfind('.',0,url_str.rfind('.'))+1:]
-    runvars['fixed_tokens'].append(url_str)
-def url_replace_fct(runvars, url_str):
-    runvars['fixed_tokens'].append(tokenizer.common.url_token) 
-def url_keep_fct(runvars, url_str):
-    runvars['fixed_tokens'].append(url_str) 
-def url_fct_selector(option):
-    if option == "drop":
-        return url_drop_fct
-    elif option == "domain":
-        return url_domain_fct
-    elif option == "replace":
-        return url_replace_fct
-    elif option == "keep":
-        return url_keep_fct
-    raise config.ConfigException('token_info setting "{}" for urls not defined.'.format(option))
+    return url_str
+def _process_urls_replace_fct(url_str):
+    return tokenizer.common.url_token
+def _process_urls_drop_fct(url_str):
+    pass
+_process_urls_fct_selector = [None,
+                              _process_urls_keep_fct, 
+                              _process_urls_domain_fct, 
+                              _process_urls_replace_fct, 
+                              _process_urls_drop_fct]
     
-def process_urls(info, runvars):
-    option = get_option(info['token_info'],'urls')
-    runvars['fixed_tokens'] = []
-    if option == 'skip':
-        runvars['text'] = runvars['document']['text']
-    else:
-        url_fct = url_fct_selector(option)
-        words = runvars['document']['text'].split()
-        new_words = []
-        runvars['fixed_tokens'] = []
-        for word in words:
-            if (word.startswith("http://") or
-                word.startswith("https://") or
-                word.startswith("www.")):
-                url_fct(runvars, word)
-            else:
-                new_words.append(word)
-        runvars['text'] = ' '.join(new_words)
+@add_method(DefaultTokenizer)
+def process_urls_token(self, token):
+    if (token.startswith("http://") or
+        token.startswith("https://") or
+        token.startswith("www.")):
+        url_str = self._process_urls_fct(token)
+        if url_str is not None:
+            self.fixed_tokens.append(url_str)
+        return None
+    return token
+
+@add_method(DefaultTokenizer)
+def process_urls(self):
+    self._process_urls_fct = _process_urls_fct_selector[self.urls_idx]
+    if self._process_urls_fct is not None:
+        iterate_tokens(self.tokens, self.process_urls_token)         
     
-if RUN_SCRIPT: run_and_compare(info, runvars, process_urls, ['document','text'], 'fixed_tokens', 'Input', 'Fixed Tokens')
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.process_urls, 'tokens', 'fixed_tokens', 'Input', 'Fixed Tokens')
 
 
 # ### ASCII Emoticons
@@ -124,41 +180,65 @@ if RUN_SCRIPT: run_and_compare(info, runvars, process_urls, ['document','text'],
 # - `keep`: keeps every ASCII emoticon as it is, no further processing
 # - `drop`: ompletely removes every ASCII emoticon from the text
 # - `replace`: replaces with the emote token
-# 
-# **TODO**: Prevent it from removing parts of words, e.g. `xp` from `experiment`
 
-# In[4]:
+# In[5]:
 
 
-def emoticon_drop_fct(runvars,emoticon,count=1):
+def _process_emotes_keep_fct(emoticon):
+    return emoticon
+def _process_emotes_replace_fct(emoticon):
+    return tokenizer.common.emote_token
+def _process_emotes_drop_fct(emoticon):
     pass
-def emoticon_keep_fct(runvars,emoticon,count=1):
-    runvars['fixed_tokens'] += [emoticon,] * count
-def emoticon_replace_fct(runvars,emoticon,count=1):
-    runvars['fixed_tokens'] += [tokenizer.common.emote_token,] * count
-def emoticon_fct_selector(option):
-    if option == 'keep':
-        return emoticon_keep_fct
-    elif option == 'drop':
-        return emoticon_drop_fct
-    elif option == 'replace':
-        return emoticon_replace_fct
-    raise config.ConfigException('token_info setting "{}" for emoticons not defined.'.format(option))
+_process_emotes_fct_selector = [None,
+                                _process_emotes_keep_fct,
+                                _process_emotes_replace_fct,
+                                _process_emotes_drop_fct]
 
+@add_method(DefaultTokenizer)
+def process_ascii_emotes_token(self, token):
+    for e, remainder in tokenizer.emoticons.western_dict.items():
+        parts = token.split(e, 1)
+        if len(parts) == 1:
+            continue
+        else:
+            # Test if it is preceded by alphanumeric characters
+            pre = parts[0][-1:]
+            if pre.isalnum():
+                continue
+                
+            for r in remainder:
+                if not parts[1].startswith(r):
+                    continue
+                post = parts[1][len(r):]
+                
+                # Test if it is followed by alphanumeric characters
+                if post[:1].isalnum():
+                    continue
+                
+                emoticon = self._process_ascii_emotes_fct(e + r)
+                if emoticon is not None:
+                    self.fixed_tokens.append(emoticon)
+                remaining = []
+                if len(pre) >= 2:
+                    remaining += self.process_ascii_emotes_token(pre)
+                else:
+                    remaining += pre
+                if len(post) >= 2:
+                    remaining += self.process_ascii_emotes_token(post)
+                else:
+                    remaining += post
+                return [s for s in parts if len(s) > 0]
+    return token
 
-def process_ascii_emoticons(info, runvars):
-    option = get_option(info['token_info'],'ascii_emotes')
-    if option != 'skip':
-        emoticon_fct = emoticon_fct_selector(option)
-        text = runvars['text']
-        for e in tokenizer.emoticons.western:
-            ecount = text.count(e)
-            if ecount > 0:
-                emoticon_fct(runvars,e,ecount)
-                text = text.replace(e, ' ')
-        runvars['text'] = text
+@add_method(DefaultTokenizer)
+def process_ascii_emotes(self):
+    self._process_ascii_emotes_fct = _process_emotes_fct_selector[self.ascii_emotes_idx]
+    if self._process_ascii_emotes_fct is not None:
+        iterate_tokens(self.tokens, self.process_ascii_emotes_token)    
             
-if RUN_SCRIPT: run_and_compare(info, runvars, process_ascii_emoticons, 'text', 'fixed_tokens', 'Input', 'Fixed Tokens')
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.process_ascii_emotes, 'tokens', 'fixed_tokens', 'Input', 'Fixed Tokens')
 
 
 # ### Unicode Emoticons
@@ -169,214 +249,198 @@ if RUN_SCRIPT: run_and_compare(info, runvars, process_ascii_emoticons, 'text', '
 # - `drop`: ompletely removes every ASCII emoticon from the text
 # - `replace`: replaces with the emote token
 
-# In[5]:
-
-
-def process_unicode_emoticons(info, runvars):
-    option = get_option(info['token_info'],'unicode_emotes')
-    if option != 'skip':
-        emoticon_fct = emoticon_fct_selector(option)
-        text = runvars['text']
-        new_text = ''
-        for c in text:
-            if c in emoji.UNICODE_EMOJI:
-                emoticon_fct(runvars,c)
-                new_text += ' '
-            else:
-                new_text += c
-        runvars['text'] = new_text
-            
-if RUN_SCRIPT: run_and_compare(info, runvars, process_unicode_emoticons, 'text', 'fixed_tokens', 'Input', 'Fixed Tokens')
-
-
-# ### Split
-# 
-# The text is split into tokens. The `separator_token` is replaced with the `separator_token_replacement`, so that it can be used for saving the tokens as a string, i.e.
-# ```
-# This;is;a;token;list
-# ```
-
 # In[6]:
 
 
-def split(info, runvars):
-    text = runvars['text']
-    text = text.replace(tokenizer.common.separator_token,tokenizer.common.separator_token_replacement)
-    runvars['tokens'] = text.split()
-if RUN_SCRIPT: run_and_compare(info, runvars, split, 'text', 'tokens')
+@add_method(DefaultTokenizer)
+def process_unicode_emotes_token(self, token):
+    tokens = []
+    new_token = ''
+    for c in token:
+        if c in emoji.UNICODE_EMOJI:
+            emoticon = self._process_ascii_emotes_fct(c)
+            if emoticon is not None:
+                self.fixed_tokens.append(emoticon)
+            if len(new_token) > 0:
+                tokens.append(new_token)
+                new_token = ''
+        else:
+            new_token += c
+    if len(tokens) == 0:
+        return new_token
+    return tokens + [new_token]
+    
+@add_method(DefaultTokenizer)
+def process_unicode_emoticons(self):
+    self._process_ascii_emotes_fct = _process_emotes_fct_selector[self.ascii_emotes_idx]
+    if self._process_ascii_emotes_fct is not None:
+        iterate_tokens(self.tokens, self.process_unicode_emotes_token) 
+        
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.process_unicode_emoticons, 'tokens', 'fixed_tokens', 'Input', 'Fixed Tokens')
 
 
-# ### Lowercase (Optional)
+# ### Split Numbers
 # 
-# All letters are lowercased.
+# This step splits words that consist of letters, special characters and numbers into distinct words.
+# `,` and `.` are allowed to occur within numbers and do not lead to splitting up the string.
 
 # In[7]:
 
 
-def lowercase_word(word):
-    return word.lower()
+dezimal_re = re.compile('([0-9]+(?:[,.]+[0-9,.]+)*)')
 
-def lowercase(info, runvars):
-    if get_option(info['token_info'],'lowercase'):
-        iterate_tokens(runvars['tokens'], lowercase_word)
+@add_method(DefaultTokenizer)
+def split_numbers_token(self, token):
+    return [s for s in dezimal_re.split(token) if len(s) > 0]
+
+@add_method(DefaultTokenizer)
+def split_numbers(self):
+    if self.numbers_split:
+        iterate_tokens(self.tokens, self.split_numbers_token) 
         
-if RUN_SCRIPT: run_and_compare(info, runvars, lowercase, 'tokens', 'tokens')
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.split_numbers, 'tokens')
 
 
-# ### Split Numbers (Optional)
+# ### Lowercase
 # 
-# This step splits words that consist of letters and numbers into distinct words.
-# `ignore_in_decimal` are characters that are allowed to occur within numbers and do not lead to splitting up the string.
+# All letters are lowercased.
 
 # In[8]:
 
 
-def split_numbers_word(word):
-    words = []
-    current_word = word[0]
-    current_word_isdecimal = current_word.isdecimal()
-    ignore_in_decimal = [",","."]
-    ignore_count = 0 # counts how many consecutive ignore_in_decimal characters have appeared
-    for char in word[1:]:
-        if char.isdecimal() != current_word_isdecimal:
-            if current_word_isdecimal and char in ignore_in_decimal and ignore_count == 0:
-                ignore_count += 1
-                current_word += char
-            else:
-                if ignore_count:
-                    current_word = current_word[:-ignore_count]
-                    ignore_count = 0
-                words.append(current_word)
-                current_word = char
-                current_word_isdecimal = current_word.isdecimal()
-        else:
-            ignore_count = 0
-            current_word += char
-    
-    if ignore_count:
-        current_word = current_word[:-ignore_count]
-    words.append(current_word)
-    return words
+@add_method(DefaultTokenizer)
+def process_lowercase_token(self, token):
+    return token.lower()
 
-def split_numbers(info, runvars):
-    if get_option(info['token_info'],'numbers_split'):
-        iterate_tokens(runvars['tokens'], split_numbers_word)
+@add_method(DefaultTokenizer)
+def process_lowercase(self):
+    if self.lowercase:
+        iterate_tokens(self.tokens, self.process_lowercase_token)
         
-if RUN_SCRIPT: run_and_compare(info, runvars, split_numbers, 'tokens', 'tokens')
-
-
-# ### Remove Non-alphanumeric characters
-
-# In[9]:
-
-
-re_number_only_single = re.compile("^(\d+)[\.,](\d+)$")
-re_word_single_apostrophe = re.compile("^[^']+'[^']{1,3}$")
-
-def remove_nonalnum_word(word):
-    if word.isalnum():
-        return word
-    
-    if re_number_only_single.match(word):
-        return word
-    elif re_word_single_apostrophe.match(word):
-        parts = word.split("'")
-        part_left = ''.join([char for char in parts[0] if char.isalnum()])
-        part_right = ''.join([char for char in parts[1] if char.isalnum()])
-        return "'".join([part_left, part_right])
-        
-    new_word = [char for char in word if char.isalnum()]
-    return ''.join(new_word)
-
-def remove_nonalnum(info, runvars):
-    if get_option(info['token_info'],'alnum_only'):
-        iterate_tokens(runvars['tokens'], remove_nonalnum_word)
-    
-if RUN_SCRIPT: run_and_compare(info, runvars, remove_nonalnum, 'tokens', 'tokens')
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.process_lowercase, 'tokens')
 
 
 # ### Remove non-ascii characters
 
+# In[9]:
+
+
+@add_method(DefaultTokenizer)
+def remove_nonascii_token(self, token):
+    return token.encode('ascii',errors='ignore').decode()
+
+@add_method(DefaultTokenizer)
+def remove_nonascii(self):
+    if self.ascii_only:
+        iterate_tokens(self.tokens, self.remove_nonascii_token)
+        
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.remove_nonascii, 'tokens')
+
+
+# ### Remove Non-alphanumeric characters
+# 
+# Removes non alphanumeric characters. Possible options for `alnum_only` are:
+# - `skip`: Retains all characters
+# - `weak`: Retains `'`, `@`, `#`, and `_`
+# - `apostrophe`: Retains `'`
+# - `strict`: Removed all characters except `a-z`, `A-Z` and `0-9`
+
 # In[10]:
 
 
-def remove_nonascii_word(word):
-    return word.encode('ascii',errors='ignore').decode()
+_remove_nonalnum_re_selector = [
+    None,
+    re.compile('[^a-zA-Z0-9\'@#_]'),
+    re.compile('[^a-zA-Z0-9\']'),
+    re.compile('[^a-zA-Z0-9]')]
 
-def remove_nonascii(info, runvars):
-    if get_option(info['token_info'],'ascii_only'):
-        iterate_tokens(runvars['tokens'], remove_nonascii_word)
-        
-if RUN_SCRIPT: run_and_compare(info, runvars, remove_nonascii, 'tokens', 'tokens')
+@add_method(DefaultTokenizer)
+def remove_nonalnum_token(self, token):
+    return [s 
+            for s in _remove_nonalnum_re_selector[self.alnum_only_idx].split(token) 
+            if len(s) > 0]
+
+@add_method(DefaultTokenizer)
+def remove_nonalnum(self):
+    if self.alnum_only:
+        iterate_tokens(self.tokens, self.remove_nonalnum_token)
+    
+if RUN_SCRIPT:
+    run_and_compare(default_tokenizer, default_tokenizer.remove_nonalnum, 'tokens')
 
 
 # ### Replace Numbers
+# 
+# Replace numbers by number tokens. Supports the following options for `numbers`:
+# - `skip`: 
+# Either replace each single digit by a token or replace the whole number (possibly including `.` and `,`) by a single token.
+
+# In[11]:
+
+
+_re_numbers_decimal  = re.compile("[0-9]")
+_re_numbers_complete = re.compile("([0-9][0-9\.,]*)|([0-9\.,]*[0-9])")
+_replace_numbers_re_selector = [None,
+    _re_numbers_decimal,
+    _re_numbers_complete,
+    _re_numbers_complete]
+_replace_numbers_sub_selector = [None,
+    tokenizer.common.number_token,
+    tokenizer.common.number_token,
+    '']
+
+@add_method(DefaultTokenizer)
+def replace_numbers_token(self, token):
+    token, count = self._replace_numbers_re.subn(self._replace_numbers_sub, token)
+    if count > 0:
+        self.fixed_tokens.append(token)
+        return None
+    return token
+
+@add_method(DefaultTokenizer)
+def replace_numbers(self):
+    if self.numbers_idx > 0:
+        self._replace_numbers_re= _replace_numbers_re_selector[self.numbers_idx]
+        self._replace_numbers_sub = _replace_numbers_sub_selector[self.numbers_idx]
+        iterate_tokens(self.tokens, self.replace_numbers_token)
+        
+if RUN_SCRIPT: 
+    run_and_compare(default_tokenizer, default_tokenizer.replace_numbers, 'tokens', 'fixed_tokens')
+
+
+# ---
+# ## Complete function
+# ---
 
 # In[12]:
 
 
-re_number_single = re.compile("[0-9]")
-def _replace_numbers(word):
-    return re_number_single.sub(tokenizer.common.number_token, word)
-
-
-re_number_complete = re.compile("([0-9][0-9\.,]*)|([0-9\.,]*[0-9])")
-def _replace_numbers_single(word):
-    return re_number_complete.sub(tokenizer.common.number_token, word)
-
-re_number_only_single = re.compile("^(\d+)[\.,](\d+)$")
-def _replace_numbers_drop(word):
-    return re_number_complete.sub("", word)
-
-replace_numbers_selector = {
-    'replace': _replace_numbers,
-    'replace_single': _replace_numbers_single,
-    'drop': _replace_numbers_drop
-}
-
-def replace_numbers(info, runvars):
-    option = get_option(info['token_info'],'numbers')
-    if option == "keep":
-        pass
-    else:
-        iterate_tokens(runvars['tokens'], replace_numbers_selector[option])
-        
-if RUN_SCRIPT: run_and_compare(info, runvars, replace_numbers, 'tokens', 'tokens')
-
-
-# ---
-# ## Build DefaultTokenizer class
-# ---
-
-# In[13]:
-
-
-class DefaultTokenizer(TokenizerBase):
-    
-    def tokenize(self, text, *args):
-        runvars = {'document': {'text': text}}
-        
-        process_urls(self.info, runvars)
-        process_ascii_emoticons(self.info, runvars)
-        process_unicode_emoticons(self.info, runvars)
-        split(self.info, runvars)
-        lowercase(self.info, runvars)
-        split_numbers(self.info, runvars)
-        remove_nonalnum(self.info, runvars)
-        remove_nonascii(self.info, runvars)
-        replace_numbers(self.info, runvars)
-        
-        return runvars['tokens'] + runvars['fixed_tokens']
+@add_method(DefaultTokenizer)
+def tokenize(self, text, *args):
+    self.init_tokenization(text)
+    self.process_urls()
+    self.process_ascii_emotes()
+    self.process_unicode_emoticons()
+    self.split_numbers()
+    self.process_lowercase()
+    self.remove_nonascii()
+    self.remove_nonalnum()
+    self.replace_numbers()
+    self.tokens = self.tokens + self.fixed_tokens
+    return self.tokens
 
 
 # ## Test tokenizer
 
-# In[14]:
+# In[13]:
 
 
-def execute_default_tokenizer(info, runvars):
-    token = DefaultTokenizer(info)
-    runvars['tokens'] = token.tokenize(runvars['document']['text'])
-
-if RUN_SCRIPT: run_and_compare(info, runvars, execute_default_tokenizer, ['document','text'], 'tokens')
+if RUN_SCRIPT:
+    default_tokenizer = DefaultTokenizer(info)
+    default_tokenizer.tokenize(runvars['document']['text'])
+    show_comparison(default_tokenizer.text, default_tokenizer.tokens, 'Text', 'Tokens')
 
