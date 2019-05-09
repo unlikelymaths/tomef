@@ -1,81 +1,60 @@
-from operator import itemgetter
-
 import data
 from base import nbprint
 
 class EmbeddingModel():
-    _current_model = None
+    current_model = None
     
     def __init__(self, info):
-        EmbeddingModel._current_model = self
-        self.model_loaded = False
+        EmbeddingModel.current_model = self
+        self._model = None
+        self._vector_size = None
+        self._embedding_function = None
         self.info = info
     
-    def load_model(self):
-        if not self.model_loaded:
+    @property
+    def model(self):
+        if self._model is None:
             nbprint('Loading embedding model...')
-            self._load_model()
+            self._model = self._load_model()
             nbprint.clear_last()
-            self.model_loaded = True
+        return self._model
     
+    @property
     def vector_size(self):
-        self.load_model()
-        return self._vector_size()
+        if self._vector_size is None:
+            self._vector_size = self._load_vector_size()
+        return self._vector_size
+    
+    @property
+    def embedding_function(self):
+        if self._embedding_function is None:
+            self._embedding_function = self._load_embedding_function()
+        return self._embedding_function
     
     def clear():
-        EmbeddingModel._current_model = None
-              
-    def current_model():
-        return EmbeddingModel._current_model
-        
+        EmbeddingModel.current_model = None
+                      
     def current_model_is_same(typename, info):
-        return (isinstance(EmbeddingModel._current_model, typename) and
-                EmbeddingModel._current_model.info.get('embedding_info') == info.get('embedding_info'))
-                
+        return (isinstance(EmbeddingModel.current_model, typename) and
+                EmbeddingModel.current_model.info.get('embedding_info') == info.get('embedding_info'))
+
+
 class WordembeddingModel(EmbeddingModel):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
-        self.vocab_loaded = False
-        self.filter_loaded = False
-        self.excluded = {}
-    
-    def load_vocab(self):
-        if not self.vocab_loaded:
-            nbprint('Loading embedding vocab...')
-            if data.embedding_vocab_exists(self.info):
-                self._vocab = data.load_embedding_vocab(self.info)
-            else:
-                self.load_model()
-                self._vocab = self._load_vocab()
-                data.save_embedding_vocab(self._vocab, self.info)
-            nbprint.clear_last()
-            self.vocab_loaded = True
-            
-    def get_excluded(self, num = 1000):
-        excluded = list(self.excluded.items())
-        excluded.sort(key=itemgetter(1), reverse=True)
-        return excluded[:num]
-    
+        self._vocab = None
+        
+    @property
     def vocab(self):
-        self.load_vocab()
-        return self._vocab
-    
-    def get_embeddings(self):
-        self.load_model()
-        return self._get_embeddings()
-        
-    def load_filter(self):
-        if not self.filter_loaded:
-            nbprint('Loading embedding filter...')
-            self._load_filter()
+        if self._vocab is None:
+            nbprint('Loading embedding vocab...')
+            if data.embedding_meta_exists('vocab', self.info):
+                self._vocab = data.load_embedding_meta('vocab', self.info)
+            else:
+                self._vocab = self._load_vocab()
+                data.save_embedding_meta(self._vocab, 'vocab', self.info)
             nbprint.clear_last()
-            self.filter_loaded = True
-    
-    def filter(self, tokens):
-        self.load_filter()
-        return self._filter(tokens)
-        
+        return self._vocab
+                
 class PhraseembeddingModel(EmbeddingModel):
-    def embed(self, messages):
-        self.load_model()
-        return self._embed(messages)
+    pass

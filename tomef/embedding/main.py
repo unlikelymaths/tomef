@@ -7,7 +7,7 @@ def get_model(info):
     cls_name = info['embedding_info']['cls']
     model_cls = import_cls('embedding', mod_name, cls_name)
     if EmbeddingModel.current_model_is_same(model_cls, info):
-        return EmbeddingModel.current_model()
+        return EmbeddingModel.current_model
     return model_cls(info)
     
 def clear():

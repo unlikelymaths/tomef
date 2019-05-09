@@ -322,9 +322,12 @@ def get_token_selector(info, callback, bcps):
         info['token_version'] = token_version
         if bcp == 'B':
             info['token_info'] = config.tokenizer['B'][id]
+            info.pop('embedding_name', None)
+            info.pop('embedding_info', None)
         elif bcp == 'C':
-            info['embedding_info'] = config.embeddings['C'][id]
             info['token_info'] = config.embeddings['C'][id]['token_info']
+            info['embedding_name'] = id
+            info['embedding_info'] = config.embeddings['C'][id]
     
     def on_token_selector_change(change):
         token_version = change['new']

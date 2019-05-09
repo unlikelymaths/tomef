@@ -38,10 +38,3 @@ def iterate_tokens(tokens, func):
 class TokenizerBase():
     def __init__(self, info):
         self.info = info
-        self.initialize()
-        
-    def initialize(self):
-        pass
-    
-    def tokenize(text):
-        return text.split()

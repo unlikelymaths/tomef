@@ -5,7 +5,8 @@ from tokenizer.default_tokenizer import DefaultTokenizer
 
 
 class W2VTokenizer(TokenizerBase):
-    def initialize(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
         self.default_tokenizer = DefaultTokenizer(
             info = {'token_info': {'numbers': 'decimal-on-one',
                                    'numbers_split': False,
@@ -15,9 +16,8 @@ class W2VTokenizer(TokenizerBase):
                                    'alnum_only': 'weak'}})
         
         self.embedding_model = get_model(self.info)
-        self.embedding_model.load_filter()
-        self.embedding_model.excluded = {}
+        self.filter = self.embedding_model.filter.filter
     
     def tokenize(self, text, *args):
         tokens = self.default_tokenizer.tokenize(text)
-        return self.embedding_model.filter(tokens)
+        return self.filter(tokens)

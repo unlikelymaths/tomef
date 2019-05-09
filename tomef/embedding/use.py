@@ -1,23 +1,35 @@
+from collections import namedtuple
+import os
 import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
 
+import config
 from embedding.embedding_model import PhraseembeddingModel
+
+USEModelData = namedtuple('USEModelData', ['module', 'session'])
 
 class USEModel(PhraseembeddingModel):
     def __del__(self):
-        if self.model_loaded:
-            self.session.close()
+        if self.model is not None:
+            self.model.session.close()
 
     def _load_model(self):
+        os.environ['TFHUB_CACHE_DIR'] = config.paths['embedding']
         tf.logging.set_verbosity(tf.logging.ERROR)
         module_url = self.info['embedding_info']['module_url']
-        self.tf_embed_module = hub.Module(module_url)
-        self.session = tf.Session()
-        self.session.run([tf.global_variables_initializer(), tf.tables_initializer()])
+        module = hub.Module(module_url)
+        session = tf.Session()
+        session.run([tf.global_variables_initializer(), tf.tables_initializer()])
+        return USEModelData(module, session)
         
-    def _embed(self, messages):
-        return self.session.run(self.tf_embed_module(messages))
+    def _load_vector_size(self):
+        return self.embedding_function(['Test String']).shape[0]
     
-    def _vector_size(self):
-        return self.embed(['Test String']).shape[1]
+    def _load_embedding_function(self):
+        module = self.model.module
+        session = self.model.session
+        def embedding_function(texts):
+            return session.run(module(texts)).T
+        return embedding_function
+    

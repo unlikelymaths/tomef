@@ -9,3 +9,8 @@ class EmbeddingError(Exception):
         infostring += 'See embedding/embedding_index.doc.ipynb for install instructions or set "run": false in config.embeddings["B"/"C"]["{}"].'
         infostring = infostring.format(name,model,embedding_name) 
         super().__init__(infostring, **kwargs)
+        
+class OOVException(KeyError):
+    def __init__(self, model, token, **kwargs):
+        infostring = 'Token "{}" not in model "{}"'.format(token,model)
+        super().__init__(infostring, **kwargs)

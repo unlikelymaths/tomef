@@ -112,17 +112,18 @@ def embedding_file_exists(info):
 def embedding_dir_exists(info):
     return isdir(embedding_filename(info))
     
-def embedding_vocab_filename(info):
-    return embedding_filename(info) + ".vocab.txt"
+def embedding_meta_filename(meta, info):
+    return join(config.paths["embedding"], '{}.{}.json'.format(
+        info['embedding_name'], meta))
     
-def embedding_vocab_exists(info):
-    return isfile(embedding_vocab_filename(info))
+def embedding_meta_exists(meta, info):
+    return isfile(embedding_meta_filename(meta, info))
 
-def save_embedding_vocab(vocab, info):
-    _save_json(vocab,embedding_vocab_filename(info))
+def save_embedding_meta(vocab, meta, info):
+    _save_json(vocab,embedding_meta_filename(meta, info))
         
-def load_embedding_vocab(info):
-    return _load_json(embedding_vocab_filename(info))
+def load_embedding_meta(meta, info):
+    return _load_json(embedding_meta_filename(meta, info))
     
 ###############################################################################
 # Importer
