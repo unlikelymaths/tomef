@@ -586,7 +586,7 @@ def get_topiclist_selector(info, callback):
 # NB Box
 
 class NotebookBox():
-    def __init__(self, mini = False, display = True):
+    def __init__(self, mini = True, display = True):
         if mini:
             self.level = 2
         else:
