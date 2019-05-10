@@ -113,7 +113,7 @@
         "mod": "word2vec",
         "cls": "Word2vecModel",
         "token_info": {
-          "mod": "embedding_tokenizer",
+          "mod": "word2vec_tokenizer",
           "cls": "W2VTokenizer"
         },
         "filename": "word2vec.bin",

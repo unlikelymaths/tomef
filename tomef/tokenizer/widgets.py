@@ -42,7 +42,7 @@ def token_app():
     
     update_output()
     
-def token_picker(info, runvars):
+def token_picker(info, runvars, bcp='B'):
     output_box = wb.DynHTML(display = False)
     run_requirements_button = widgets.Button(description="Run Requirements")
     nbbox = wb.nbbox(display = False)
@@ -90,7 +90,7 @@ def token_picker(info, runvars):
         
     data_selector = wb.get_data_selector(info, update_output)
     document_selector = wb.get_rawdocument_selector(info, update_output)
-    token_selector = wb.get_token_selector(info, update_output, 'B')
+    token_selector = wb.get_token_selector(info, update_output, bcp)
     run_requirements_button.on_click(on_run_requirements_button_clicked)
     settings_box = widgets.VBox([data_selector,
                                  document_selector,
@@ -191,7 +191,8 @@ def get_attribute(obj, attribute):
 
 def list_to_string(value):
     if isinstance(value, list):
-        return (separator_token + ' ').join(value)
+        return (separator_token + ' ').join(
+            [str(entry) for entry in value])
     return value
     
 def show_comparison(before, after, before_label, after_label):
