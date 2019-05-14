@@ -117,7 +117,8 @@
           "cls": "W2VTokenizer"
         },
         "filename": "word2vec.bin",
-        "track_exclusion": false
+        "track_exclusion": false,
+        "fast_filter": true
       }
     },
     "P": {
