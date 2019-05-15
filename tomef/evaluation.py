@@ -20,12 +20,11 @@ try:
 except NameError: 
     pass
 
-from widgetbase import nbbox
-
 from tools.tools import run_tools
 run_tools()
 
-import config
+from base import config
+from widgets import nbbox
 config.load_config()
 
 
@@ -36,9 +35,9 @@ config.load_config()
 
 
 if config.importer["run"]:
-    nbbox(mini=True)
-    from importer.main import run_importer 
-    run_importer()
+    with nbbox():
+        from importer.main import run_importer 
+        run_importer()
 
 
 # ## [Tokenizer](./tokenizer/tokenizer.ipynb)
@@ -49,9 +48,9 @@ if config.importer["run"]:
 
 
 if config.tokenizer["run"]:
-    nbbox(mini=True)
-    from tokenizer.main import run_tokenizer
-    run_tokenizer()
+    with nbbox():
+        from tokenizer.main import run_tokenizer
+        run_tokenizer()
 
 
 # ## [Vocab](./vocab/vocab.ipynb)
@@ -61,9 +60,9 @@ if config.tokenizer["run"]:
 
 
 if config.vocab["run"]:
-    nbbox(mini=True)
-    from vocab.main import run_vocab
-    run_vocab()
+    with nbbox():
+        from vocab.main import run_vocab
+        run_vocab()
 
 
 # ## [Vectorizer](./vectorizer/vectorizer.ipynb)
@@ -73,9 +72,9 @@ if config.vocab["run"]:
 
 
 if config.vectorizer["run"]:
-    nbbox(mini=True)
-    from vectorizer.main import run_vectorizer
-    run_vectorizer()
+    with nbbox():
+        from vectorizer.main import run_vectorizer
+        run_vectorizer()
 
 
 # ## [Models](./models/models.ipynb)
@@ -85,9 +84,9 @@ if config.vectorizer["run"]:
 
 
 if config.models["run"]:
-    nbbox(mini=True)
-    from models.main import run_models
-    run_models()
+    with nbbox():
+        from models.main import run_models
+        run_models()
 
 
 # ## [Model Metrics](./metrics/metrics.ipynb)
@@ -97,9 +96,9 @@ if config.models["run"]:
 
 
 if config.metrics["run"]:
-    nbbox(mini=True)
-    from metrics.main import run_model_metrics
-    run_model_metrics()
+    with nbbox():
+        from metrics.main import run_model_metrics
+        run_model_metrics()
 
 
 # ## [Distiller](./distiller/distiller.ipynb)
@@ -109,9 +108,9 @@ if config.metrics["run"]:
 
 
 if config.distiller["run"]:
-    nbbox(mini=True)
-    from distiller.main import run_distiller
-    run_distiller()
+    with nbbox():
+        from distiller.main import run_distiller
+        run_distiller()
 
 
 # ## [Topic Metrics](./metrics/metrics.ipynb)
@@ -121,7 +120,7 @@ if config.distiller["run"]:
 
 
 if config.metrics["run"]:
-    nbbox(mini=True)
-    from metrics.main import run_topic_metrics
-    run_topic_metrics()
+    with nbbox():
+        from metrics.main import run_topic_metrics
+        run_topic_metrics()
 

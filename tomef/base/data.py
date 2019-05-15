@@ -1,14 +1,13 @@
-import config
-from os.path import join, isfile, isdir
-from os import listdir, remove
 import re
 import json
 import numpy as np
+from os.path import join, isfile, isdir
+from os import listdir, remove
 from scipy.io import savemat
 from scipy import sparse
-from distiller.common import TopicEntry
 
-something_blue = 42
+from base import config
+from distiller.common import TopicEntry
 
 ###############################################################################
 # General
