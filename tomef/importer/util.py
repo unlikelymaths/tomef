@@ -1,8 +1,8 @@
 from scipy.stats import skew
 from numpy import std
 
-import data
-from base import nbprint
+from base import data
+from widgets import nbprint
 
 class ImporterBase():
     def __init__(self, info):

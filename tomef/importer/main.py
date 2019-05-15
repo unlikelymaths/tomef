@@ -1,7 +1,5 @@
-import config
-import data
-from base import nbprint
-from util import iterate, import_cls
+from base import config, data, util, iterator
+from widgets import nbprint
 
 from importer.common import ImporterError
 
@@ -21,7 +19,7 @@ def import_data(info):
             return
     
     # Import the corresponding module
-    importer_cls = import_cls('importer', info['data_info']['mod'], info['data_info']['cls'])
+    importer_cls = util.import_cls('importer', info['data_info']['mod'], info['data_info']['cls'])
     
     # Run the importer method
     try:
@@ -43,7 +41,7 @@ def run_importer(info = None):
     nbprint('Importer').push()
     
     if info is None:
-        iterate(["data"],[import_data], depth=0)
+        iterator.iterate('data',import_data)
     else:
         import_data(info)
         

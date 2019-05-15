@@ -3,10 +3,8 @@ import json
 import tarfile
 from os.path import join, isfile
 
-import config
-import data
-from base import nbprint
-from util import ProgressIterator
+from base import config, data
+from widgets import nbprint, ProgressIterator
 
 from importer.util import ClassInfo, DocumentInfo, ImporterBase
 from importer.common import ImporterError, doc_progress_label
