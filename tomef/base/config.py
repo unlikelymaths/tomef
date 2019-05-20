@@ -5,7 +5,7 @@ import pdb
 import random
 import sys
 
-from widgets import nbprint
+from interface import nbprint
 
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'../..'))
 

@@ -1,5 +1,5 @@
-import data
-from base import nbprint
+from base import data
+from interface import nbprint
 
 from importer.main import run_importer
 

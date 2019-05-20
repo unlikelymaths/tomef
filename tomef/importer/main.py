@@ -1,5 +1,5 @@
 from base import config, data, util, iterator
-from widgets import nbprint
+from interface import nbprint
 
 from importer.common import ImporterError
 

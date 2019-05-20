@@ -2,14 +2,12 @@ import traceback
 import ipywidgets as widgets
 from IPython.display import display, Markdown, Latex, HTML, DisplayHandle
 
-import config
-import data
-import util
+from base import config, data, util
 
       
 # Teble templates
 _line_template = {}
-_line_template['header']: '''<tr>
+_line_template['header'] = '''<tr>
     <td class="tdalignedlabel">
         <b>{label}</b>
     </td>
@@ -17,23 +15,23 @@ _line_template['header']: '''<tr>
         {value}
     </td>
 </tr>\n'''
-_line_template['std']: '''<tr>
+_line_template['std'] = '''<tr>
     <td class="tdalignedlabel">
         {label}
     </td>
     <td class="tdalignedvalue">
         {value}
     </td>
-</tr>\n''',
-_line_template['text']: '''<tr>
+</tr>\n'''
+_line_template['text'] = '''<tr>
     <td class="tdalignedlabel">
         {label}
     </td>
     <td class="tdalignedvalue">
         <textarea rows="16" cols="100" readonly>{value}</textarea>
     </td>
-</tr>\n''',
-_line_template['text2']: '''<tr>
+</tr>\n'''
+_line_template['text2'] = '''<tr>
     <td class="tdalignedlabel">
         {label}
     </td>

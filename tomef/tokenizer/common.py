@@ -1,4 +1,4 @@
-from util import import_cls
+from base.util import import_cls
 
 separator_token = ';'
 separator_token_replacement = ','

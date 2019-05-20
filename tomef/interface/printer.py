@@ -1,5 +1,7 @@
+import traceback
+from IPython.display import DisplayHandle, Markdown
 from ipywidgets.widgets import FloatProgress
-from widgets.display import DynamicMarkdown, style
+from interface.display import DynamicMarkdown, style
 
 _dynamic_text_widget = None
 _progress_widget = None
@@ -105,18 +107,39 @@ def clear_progress():
 class NotebookBox():
     """Provides a markdown area and a progress widget"""
     
+    def __init__(self, update_display = True):
+        self.dynamic_markdown = None
+        self.progress_widget = None
+        self.handles = None
+        if update_display:
+            self.display()
+    
+    def clear(self):
+        if self.dynamic_markdown is not None:
+            self.dynamic_markdown.clear()
+    
+    def display(self):
+        if self.handles is None:
+            self.handles = (DisplayHandle(),DisplayHandle())
+            self.handles[0].display(Markdown(''))
+            self.handles[1].display(Markdown(''))
+    
     def __enter__(self):
-        global _dynamic_text_widget, _progress_widget
+        self.display()
+        
         # Create and display markdown element and float progress widget
-        self.dynamic_markdown = DynamicMarkdown()
-        self.progress_widget = FloatProgress(
-            value=0,min=0,max=1,step=0.01,
-            description='',bar_style='info',orientation='horizontal',
-            style=style)
+        if self.dynamic_markdown is None:
+            self.dynamic_markdown = DynamicMarkdown(handle = self.handles[0])
+        if self.progress_widget is None:
+            self.progress_widget = FloatProgress(
+                value=0,min=0,max=1,step=0.01,
+                description='',bar_style='info',orientation='horizontal',
+                style=style)
         self.progress_widget.layout.visibility = 'hidden'
-        display(self.progress_widget)
+        self.handles[1].update(self.progress_widget)
         
         # Make them current
+        global _dynamic_text_widget, _progress_widget
         _dynamic_text_widget = self.dynamic_markdown
         _progress_widget = self.progress_widget
 
@@ -124,13 +147,14 @@ class NotebookBox():
         notebook_printer.level = 0
         
     def __exit__(self, type, value, traceback):
-        global _dynamic_text_widget, _progress_widget
         # Unregister widgets
+        global _dynamic_text_widget, _progress_widget
         _dynamic_text_widget = None
         _progress_widget = None
         
         # Close widgets
-        self.progress_widget.close()
+        self.handles[1].update(Markdown(''))
+        #self.progress_widget = None
         
         # Reset Level
         notebook_printer.level = 0

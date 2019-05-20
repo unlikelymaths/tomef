@@ -43,8 +43,8 @@ class DynamicHTML():
 class DynamicMarkdown():
     """A output element for displaying Markdown that can be updated."""
     
-    def __init__(self, content = None, update_display = True):
-        self.handle = None
+    def __init__(self, content = None, update_display = True, handle = None):
+        self.handle = handle
         self.set(content, update_display)
     
     def display(self):

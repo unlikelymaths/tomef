@@ -5,9 +5,8 @@ from difflib import get_close_matches
 
 from collections import defaultdict
 
-import data
-from base import nbprint
-from util import ProgressIterator
+from base import data
+from interface import nbprint, ProgressIterator
 
 from embedding.embedding_model import WordembeddingModel
 from embedding.common import EmbeddingError, OOVException

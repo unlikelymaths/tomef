@@ -24,7 +24,7 @@ from tools.tools import run_tools
 run_tools()
 
 from base import config
-from widgets import nbbox
+from interface import nbbox
 config.load_config()
 
 

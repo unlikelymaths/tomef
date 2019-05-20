@@ -14,7 +14,7 @@
 # ## Setup and Settings
 # ---
 
-# In[1]:
+# In[ ]:
 
 
 from __init__ import init_vars
@@ -23,14 +23,13 @@ init_vars(vars(), ('info', {}), ('runvars', {}))
 import re
 import emoji
     
-import data
-import config
-from base import nbprint
-from util import ProgressIterator, add_method
+from base import config, data
+from base.util import add_method
+from interface import nbprint, ProgressIterator
 
 import tokenizer.common
 import tokenizer.emoticons
-from tokenizer.token_util import iterate_tokens, TokenizerBase
+from tokenizer.util import iterate_tokens, TokenizerBase
 from tokenizer.widgets import token_picker, run_and_compare, show_comparison
 
 if RUN_SCRIPT: token_picker(info, runvars)
@@ -41,7 +40,7 @@ if RUN_SCRIPT: token_picker(info, runvars)
 # ---
 # The following functions consitute the `DefaultTokenizer` class that transforms the raw text of a document into tokens.
 
-# In[2]:
+# In[ ]:
 
 
 URLS_OPTIONS = ['skip', 'keep', 'domain', 'replace', 'drop']
@@ -106,7 +105,7 @@ if RUN_SCRIPT:
 # This:is:a:token:list
 # ```
 
-# In[3]:
+# In[ ]:
 
 
 @add_method(DefaultTokenizer)
@@ -128,7 +127,7 @@ if RUN_SCRIPT:
 # - `drop`: completely removes every URL from the text
 # - `replace`: replaces every URL with the URL Token
 
-# In[4]:
+# In[ ]:
 
 
 def _process_urls_keep_fct(url_str):
@@ -181,7 +180,7 @@ if RUN_SCRIPT:
 # - `drop`: ompletely removes every ASCII emoticon from the text
 # - `replace`: replaces with the emote token
 
-# In[5]:
+# In[ ]:
 
 
 def _process_emotes_keep_fct(emoticon):
@@ -249,7 +248,7 @@ if RUN_SCRIPT:
 # - `drop`: ompletely removes every ASCII emoticon from the text
 # - `replace`: replaces with the emote token
 
-# In[6]:
+# In[ ]:
 
 
 @add_method(DefaultTokenizer)
@@ -285,7 +284,7 @@ if RUN_SCRIPT:
 # This step splits words that consist of letters, special characters and numbers into distinct words.
 # `,` and `.` are allowed to occur within numbers and do not lead to splitting up the string.
 
-# In[7]:
+# In[ ]:
 
 
 dezimal_re = re.compile('([0-9]+(?:[,.]+[0-9,.]+)*)')
@@ -307,7 +306,7 @@ if RUN_SCRIPT:
 # 
 # All letters are lowercased.
 
-# In[8]:
+# In[ ]:
 
 
 @add_method(DefaultTokenizer)
@@ -325,7 +324,7 @@ if RUN_SCRIPT:
 
 # ### Remove non-ascii characters
 
-# In[9]:
+# In[ ]:
 
 
 @add_method(DefaultTokenizer)
@@ -349,7 +348,7 @@ if RUN_SCRIPT:
 # - `apostrophe`: Retains `'`
 # - `strict`: Removed all characters except `a-z`, `A-Z` and `0-9`
 
-# In[10]:
+# In[ ]:
 
 
 _remove_nonalnum_re_selector = [
@@ -379,7 +378,7 @@ if RUN_SCRIPT:
 # - `skip`: 
 # Either replace each single digit by a token or replace the whole number (possibly including `.` and `,`) by a single token.
 
-# In[11]:
+# In[ ]:
 
 
 _re_numbers_decimal  = re.compile("[0-9]")
@@ -416,7 +415,7 @@ if RUN_SCRIPT:
 # ## Complete function
 # ---
 
-# In[12]:
+# In[ ]:
 
 
 @add_method(DefaultTokenizer)
@@ -436,7 +435,7 @@ def tokenize(self, text, *args):
 
 # ## Test tokenizer
 
-# In[13]:
+# In[ ]:
 
 
 if RUN_SCRIPT:

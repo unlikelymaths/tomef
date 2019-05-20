@@ -13,7 +13,7 @@
 # ## Setup and Settings
 # ---
 
-# In[124]:
+# In[ ]:
 
 
 from __init__ import init_vars
@@ -21,16 +21,14 @@ init_vars(vars(), ('info', {}), ('runvars', {}))
 
 import re
     
-import data
-import config
-from base import nbprint
-from widgetbase import nbbox
-from util import ProgressIterator, add_method
+from base import data, config
+from base.util import add_method
+from interface import nbprint, nbbox, ProgressIterator
 
 from embedding.main import get_model
 
 import tokenizer.common
-from tokenizer.token_util import TokenizerBase
+from tokenizer.util import TokenizerBase
 from tokenizer.default_tokenizer import DefaultTokenizer
 from tokenizer.widgets import token_picker, run_and_compare, show_comparison
 
@@ -42,7 +40,7 @@ if RUN_SCRIPT: token_picker(info, runvars, 'C')
 # ---
 # The following functions consitute the `W2VTokenizer` class that transforms the raw text of a document into tokens.
 
-# In[170]:
+# In[ ]:
 
 
 class W2VTokenizer(TokenizerBase):
@@ -52,9 +50,9 @@ class W2VTokenizer(TokenizerBase):
         self.filter = self.embedding_model.filter.filter
 
 if RUN_SCRIPT:
-    nbbox()
-    w2v_tokenizer = W2VTokenizer(info)
-    w2v_tokenizer.text = runvars['document']['text']
+    with nbbox():
+        w2v_tokenizer = W2VTokenizer(info)
+        w2v_tokenizer.text = runvars['document']['text']
 
 
 # ### Prepare Text
@@ -64,7 +62,7 @@ if RUN_SCRIPT:
 # - all whitespaces by a single whitespace
 # - `#` by nothing
 
-# In[171]:
+# In[ ]:
 
 
 _re_whitespace = re.compile('[\s]+', re.UNICODE)
@@ -86,7 +84,7 @@ if RUN_SCRIPT:
 # 
 # All numbers are replaced by `#`. This include all numbers in the Unicode 'Number, Decimal Digit' category.
 
-# In[172]:
+# In[ ]:
 
 
 _re_decimal = re.compile('\d', re.UNICODE)
@@ -103,7 +101,7 @@ if RUN_SCRIPT:
 # 
 # This step splits the string into substrings $s_i$ at all sequences of non alphanumeric characters (`\w`), whitespace (`\s`), or apostrophes (`\'`). Later, the algorithm will only try to combine tokens from each $s_i$ separately into phrases, but not tokens from different substrings.
 
-# In[173]:
+# In[ ]:
 
 
 _re_breaking = re.compile('[^\w\s\'\’#]+', re.UNICODE)
@@ -118,7 +116,7 @@ if RUN_SCRIPT:
 
 # ### Split at nonbreaking characters
 
-# In[174]:
+# In[ ]:
 
 
 @add_method(W2VTokenizer)
@@ -133,7 +131,7 @@ if RUN_SCRIPT:
 
 # ### Filter
 
-# In[175]:
+# In[ ]:
 
 
 @add_method(W2VTokenizer)
@@ -150,7 +148,7 @@ if RUN_SCRIPT:
 # ## Complete function
 # ---
 
-# In[177]:
+# In[ ]:
 
 
 @add_method(W2VTokenizer)
@@ -166,7 +164,7 @@ def tokenize(self, text, *args):
 
 # ## Test tokenizer
 
-# In[178]:
+# In[ ]:
 
 
 if RUN_SCRIPT:

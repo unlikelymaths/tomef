@@ -12,7 +12,7 @@
 # ## Setup and Settings
 # ---
 
-# In[5]:
+# In[ ]:
 
 
 from __init__ import init_vars
@@ -27,14 +27,14 @@ except LookupError:
 from nltk.tokenize import word_tokenize
     
 import tokenizer.common
-from tokenizer.token_util import TokenizerBase
+from tokenizer.util import TokenizerBase
 
 
 # ---
 # ## Build PTTokenizer class
 # ---
 
-# In[3]:
+# In[ ]:
 
 
 class PTTokenizer(TokenizerBase):

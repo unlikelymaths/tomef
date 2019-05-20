@@ -1,4 +1,4 @@
-from widgets.printer import print_progress, clear_progress
+from interface.printer import print_progress, clear_progress
 
 
 class ProgressIterator:

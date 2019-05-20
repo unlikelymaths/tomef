@@ -1,10 +1,8 @@
 from os.path import join
 from os import listdir
 
-import config
-import data
-from util import ProgressIterator
-from base import nbprint
+from base import config, data
+from interface import nbprint, ProgressIterator
 
 from importer.util import DocumentInfo, ImporterBase
 from importer.common import ImporterError, doc_progress_label

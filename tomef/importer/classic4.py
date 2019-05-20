@@ -2,7 +2,7 @@ from os.path import join
 from os import listdir
 
 from base import config, data
-from widgets import ProgressIterator
+from interface import ProgressIterator
 
 from importer.util import ClassInfo, DocumentInfo, ImporterBase
 from importer.common import ImporterError, doc_progress_label

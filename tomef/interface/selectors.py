@@ -1,11 +1,9 @@
 import traceback
 import ipywidgets as widgets
 from IPython.display import display, Markdown, Latex, HTML, DisplayHandle
-from widgets.display import style
+from interface.display import style
 
-import config
-import data
-import util
+from base import config, data, util
 
 
 

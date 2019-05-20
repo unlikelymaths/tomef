@@ -2,7 +2,7 @@ from scipy.stats import skew
 from numpy import std
 
 from base import data
-from widgets import nbprint
+from interface import nbprint
 
 class ImporterBase():
     def __init__(self, info):

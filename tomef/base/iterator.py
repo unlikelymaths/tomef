@@ -1,5 +1,5 @@
 from base import config, util
-from widgets import nbprint
+from interface import nbprint
 
 
 class BreakIteration(Exception):

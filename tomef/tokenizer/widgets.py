@@ -1,51 +1,53 @@
 import ipywidgets as widgets
 from IPython.display import display, HTML
 
-import config
-import data
-import widgetbase as wb
-from base import nbprint
+
+from base import config, data
+from interface import nbprint, nbbox, ProgressIterator
+from interface.display import DynamicHTML
+from interface.tables import info_table
+from interface.selectors import (get_data_selector, 
+    get_rawdocument_selector, get_token_selector)
 
 from tokenizer.common import separator_token, get_tokenizer
-from tokenizer.token_util import check_requirements
+from tokenizer.util import check_requirements
 
 def token_app():
     info = {}
-    output_box = wb.DynHTML(display = False)
-    nbbox = wb.nbbox(display = False)
+    output_box = DynamicHTML(update_display = False)
+    token_nbbox = nbbox(update_display = False)
     
-    def update_output(clear_nbbox = True):
-        nbbox.make_current()
-        if clear_nbbox:
-            nbbox.clear()
-        output_box.update(wb.info_table('data:short,token:long', info, exists = [('Exists','header',data.tokenized_document_exists(info))]))
+    def update_output():
+        with token_nbbox:
+            output_box.set(info_table('data:short,token:long', 
+                info, exists = [('Exists','header',data.tokenized_document_exists(info))]))
       
     def on_run_button_clicked(b):
-        nbbox.make_current()
-        nbbox.clear()
-        try:
-            check_requirements(info)
-            from tokenizer.main import run_tokenizer
-            run_tokenizer(info)
-        except:
-            nbprint.print_traceback()
-        update_output(False)
-    data_selector = wb.get_data_selector(info, update_output)
-    token_selector = wb.get_token_selector(info, update_output, 'BC')
+        token_nbbox.clear()
+        with token_nbbox:
+            try:
+                check_requirements(info)
+                from tokenizer.main import run_tokenizer
+                run_tokenizer(info)
+            except:
+                nbprint.print_traceback()
+        update_output()
+    
+    data_selector = get_data_selector(info, update_output)
+    token_selector = get_token_selector(info, update_output, 'BC')
     run_button = widgets.Button(description="Run All")
     run_button.on_click(on_run_button_clicked)
     settings_box = widgets.VBox([data_selector,token_selector,run_button])
     
     display(settings_box)
     output_box.display()
-    nbbox.display()
-    
+    token_nbbox.display()
     update_output()
     
 def token_picker(info, runvars, bcp='B'):
-    output_box = wb.DynHTML(display = False)
+    output_box = DynamicHTML(update_display = False)
     run_requirements_button = widgets.Button(description="Run Requirements")
-    nbbox = wb.nbbox(display = False)
+    token_nbbox = nbbox()
     
     def document_table(replacement_text = None):
         header = ('Document', 'header')
@@ -66,31 +68,27 @@ def token_picker(info, runvars, bcp='B'):
                 runvars['document'] = next(doc for doc in documents if doc["id"]==info["document_id"])
         except: pass
     
-    def update_output(clear_nbbox = True):
-        nbbox.make_current()
-        if clear_nbbox:
-            nbbox.clear()
+    def update_output():
         runvars['document'] = None
         if data.documents_exists(info):
             run_requirements_button.disabled = True
-            output_box.update(wb.info_table('data:short,token:long,custom:document', info, document=document_table('Loading...')))
+            output_box.set(info_table('data:short,token:long,custom:document', info, document=document_table('Loading...')))
             load_document()
         else:
             run_requirements_button.disabled = False
-        output_box.update(wb.info_table('data:short,token:long,custom:document', info, document=document_table()))
+        output_box.set(info_table('data:short,token:long,custom:document', info, document=document_table()))
             
     def on_run_requirements_button_clicked(b):
-        nbbox.make_current()
-        nbbox.clear()
-        try:
-            check_requirements(info)
-        except:
-            nbprint.print_traceback()
-        update_output(False)
+        with token_nbbox:
+            try:
+                check_requirements(info)
+            except:
+                nbprint.print_traceback()
+            update_output(False)
         
-    data_selector = wb.get_data_selector(info, update_output)
-    document_selector = wb.get_rawdocument_selector(info, update_output)
-    token_selector = wb.get_token_selector(info, update_output, bcp)
+    data_selector = get_data_selector(info, update_output)
+    document_selector = get_rawdocument_selector(info, update_output)
+    token_selector = get_token_selector(info, update_output, bcp)
     run_requirements_button.on_click(on_run_requirements_button_clicked)
     settings_box = widgets.VBox([data_selector,
                                  document_selector,
@@ -99,15 +97,13 @@ def token_picker(info, runvars, bcp='B'):
     
     
     display(settings_box)
-    output_box.display()   
-    nbbox.display()
-    
+    output_box.display()
     update_output()
   
 def tokenize_document_widget(info, runvars):
-    output_box = wb.DynHTML(display = False)
+    output_box = DynamicHTML(update_display = False)
     run_requirements_button = widgets.Button(description="Run Requirements")
-    nbbox = wb.nbbox(display = False)
+    token_nbbox = nbbox()
     
     def document_table(replacement_text = None):
         header = ('Document', 'header')
@@ -137,39 +133,35 @@ def tokenize_document_widget(info, runvars):
         try:
             token = get_tokenizer(info)
             runvars['tokens'] = token.tokenize(runvars['document']['text'])
-            output_box.update(wb.info_table('data:short,token:long,custom:document', info, document=document_table()))
+            output_box.set(info_table('data:short,token:long,custom:document', info, document=document_table()))
         except:
             nbprint.print_traceback()
         
     
-    def update_output(clear_nbbox = True):
-        nbbox.make_current()
-        if clear_nbbox:
-            nbbox.clear()
+    def update_output():
         runvars['document'] = None
         runvars['tokens'] = None
         if data.documents_exists(info):
             run_requirements_button.disabled = True
-            output_box.update(wb.info_table('data:short,token:long,custom:document', info, document=document_table('Loading...')))
+            output_box.set(info_table('data:short,token:long,custom:document', info, document=document_table('Loading...')))
             load_document()
         else:
             run_requirements_button.disabled = False
-        output_box.update(wb.info_table('data:short,token:long,custom:document', info, document=document_table()))
+        output_box.set(info_table('data:short,token:long,custom:document', info, document=document_table()))
         tokenize_document()
-        output_box.update(wb.info_table('data:short,token:long,custom:document', info, document=document_table()))
+        output_box.set(info_table('data:short,token:long,custom:document', info, document=document_table()))
             
     def on_run_requirements_button_clicked(b):
-        nbbox.make_current()
-        nbbox.clear()
-        try:
-            check_requirements(info)
-        except:
-            nbprint.print_traceback()
-        update_output(False)
+        with token_nbbox:
+            try:
+                check_requirements(info)
+            except:
+                nbprint.print_traceback()
+            update_output(False)
         
-    data_selector = wb.get_data_selector(info, update_output)
-    document_selector = wb.get_rawdocument_selector(info, update_output)
-    token_selector = wb.get_token_selector(info, update_output, 'BC')
+    data_selector = get_data_selector(info, update_output)
+    document_selector = get_rawdocument_selector(info, update_output)
+    token_selector = get_token_selector(info, update_output, 'BC')
     run_requirements_button.on_click(on_run_requirements_button_clicked)
     settings_box = widgets.VBox([data_selector,
                                  document_selector,
@@ -178,9 +170,7 @@ def tokenize_document_widget(info, runvars):
     
     
     display(settings_box)
-    output_box.display()   
-    nbbox.display()
-    
+    output_box.display()
     update_output()
 
 def get_attribute(obj, attribute):
