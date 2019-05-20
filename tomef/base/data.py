@@ -538,3 +538,23 @@ def load_metric_data(file):
     if metric_data_exists(file):
         return _load_json(metric_data_filename(file))
     return []
+
+###############################################################################
+# Meta
+###############################################################################
+
+# Clustering Metrics
+
+def meta_data_filename(file):
+    return join(config.paths["results"],"meta/{}.json".format(file))
+
+def meta_data_exists(file):
+    return isfile(meta_data_filename(file))
+
+def save_meta_data(meta_data, file):
+    _save_json(meta_data, meta_data_filename(file))
+    
+def load_meta_data(file):
+    if meta_data_exists(file):
+        return _load_json(meta_data_filename(file))
+    return []

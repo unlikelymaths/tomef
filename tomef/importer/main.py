@@ -24,7 +24,8 @@ def import_data(info):
     # Run the importer method
     try:
         importer_obj = importer_cls(info)
-        importer_obj.run()
+        with util.ModuleTimer('importer', info):
+            importer_obj.run()
     except BaseException as err:
         data.clear_file(data.documents_filename(info))
         data.clear_file(data.classes_filename(info))
