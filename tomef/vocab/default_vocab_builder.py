@@ -5,37 +5,32 @@
 # <div style="position: absolute; right:0;top:0"><a href="./vocab.ipynb" style="text-decoration: none"> <font size="5">←</font></a>
 # <a href="../evaluation.py.ipynb" style="text-decoration: none"> <font size="5">↑</font></a></div>
 # 
-# This module provides the `count_tokens()` and the `filter_tokens()` functions.
+# This module provides the `DefaultVocabBuilder` class that transforms the `tokens` of all documents into a `vocab`.
+# First it counts all occurences of tokens in the dataset and the number of documents they appear in (`count_tokens()`).
+# Subsequently, it executes various functions that are controlled by the `vocab_info` settings.
+# You can chose dataset, token version and vector version to see the effect of various settings.
 # 
 # ---
 # ## Setup and Settings
 # ---
 
-# In[1]:
+# In[ ]:
 
 
 from __init__ import init_vars
-init_vars(vars(), ('info', {}), ('runvars', {}))
+init_vars(vars(), ('info', {}))
 
-import random
 from operator import attrgetter
-from nltk.corpus import stopwords
-import nltk
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
             
-import data
-import config
-from base import nbprint
-from util import ProgressIterator
-from widgetbase import nbbox
+from base import config, data
+from base.util import add_method
+from interface import nbprint, nbbox, ProgressIterator
 
 from tokenizer.common import split_tokens
 
-from vocab.widgets import vocab_picker
-from vocab.vocab_util import VocabItem,VocabBuilder
+from vocab.widgets import vocab_picker, show_tokens
+from vocab.util import VocabItem,VocabBuilder
+from vocab.stopwords import nltk_stopwords
 
 if RUN_SCRIPT: vocab_picker(info)
 
@@ -43,87 +38,107 @@ if RUN_SCRIPT: vocab_picker(info)
 # ---
 # ## Vocab Builder
 # ---
+# 
+# The following functions consitute the `DefaultVocabBuilder` class that produces a vocabulary by counting all tokens in a dataset and reducing the set of tokens according to various filters.
 
-# In[8]:
+# In[ ]:
 
 
-default_options = {
-    'min_docs': False,
-    'max_docs': False,
-    'min_count': False,
-    'min_word_length': False,
-    'max_word_length': False,
-    'stopwords': False,
-    'max_tokens': False,
-}
-def get_option(info, option_key):
-    return info['vocab_info'].get(option_key, default_options[option_key])
-def to_abs(count, num_docs):
+class DefaultVocabBuilder(VocabBuilder):
+    
+    def __init__(self, info):
+        super().__init__(info)
+        vocab_info = info.get('vocab_info', {})
+        
+        self.min_docs = vocab_info.get('min_docs', False)
+        self.max_docs = vocab_info.get('max_docs', False)
+        self.min_count = vocab_info.get('min_count', False)
+        self.max_count = vocab_info.get('max_count', False)
+        self.min_word_length = vocab_info.get('min_word_length', False)
+        self.max_word_length = vocab_info.get('max_word_length', False)
+        self.stopwords = vocab_info.get('stopwords', False)
+        self.max_tokens = vocab_info.get('max_tokens', False)
+
+        #self.urls = token_info.get('urls', 'skip')
+        #try:
+        #    self.urls_idx = URLS_OPTIONS.index(self.urls)
+        #except ValueError:
+        #    raise config.ConfigException(('Invalid DefaultTokenizer configuration option urls "{}". '
+        #                                  'Valid options are "{}".').format(self.urls, '", "'.join(URLS_OPTIONS)))
+        
+if RUN_SCRIPT:
+    default_vocab_builder = DefaultVocabBuilder(info)
+
+
+# ### Relative to absolute counts
+# 
+# As some settings can be given in relative terms (e.g. `min_docs = 0.01` to only allow tokens that appear in at least 1% of the documents) this method transforms any number `<1` to an absolute count value.
+
+# In[ ]:
+
+
+@add_method(DefaultVocabBuilder)
+def to_abs(self, count):
     if count <= 0:
         return 0
     elif count < 1:
-        return int(count * num_docs)
+        return int(count * self.num_docs)
     return count
 
+
+# ---
+# ## Count tokens
+# ---
 
 # ### `def count_tokens()`  
 # Iterates over all tokens and accumulates counts in `rawcounts` dict.
 
-# In[9]:
+# In[ ]:
 
 
-def count_tokens(info, runvars):
-    rawcounts = {} 
-    num_docs = 0
-    with data.tokenized_document_reader(info) as documents:   
+@add_method(DefaultVocabBuilder)
+def count_tokens(self):
+    self.rawcounts = {} 
+    self.num_docs = 0
+    with data.tokenized_document_reader(self.info) as documents:   
         for document in ProgressIterator(documents, 'Counting Tokens'):
-            num_docs += 1
+            self.num_docs += 1
             tokens = split_tokens(document['tokens'])
             for token in tokens:
                 try:
-                    rawcounts[token].increase_total()
+                    self.rawcounts[token].increase_total()
                 except KeyError:
-                    rawcounts[token] = VocabItem(token, total=1)
+                    self.rawcounts[token] = VocabItem(token, total=1)
             for token in set(tokens):
-                rawcounts[token].increase_document() 
-    runvars['rawcounts'] = rawcounts
-    runvars['num_docs'] = num_docs
+                self.rawcounts[token].increase_document() 
+    self.num_tokens = len(self.rawcounts)
 if RUN_SCRIPT:
-    nbbox()
-    count_tokens(info, runvars)
+    with nbbox():
+        default_vocab_builder.count_tokens()
 
 
 # ### `def sort_counts()`  
 # Turn `rawcounts` dict into list and sort tokens by number of total occurences.
 
-# In[10]:
+# In[ ]:
 
 
-def sort_counts(info, runvars):
-    runvars['counts'] = sorted(runvars['rawcounts'].values(), 
+@add_method(DefaultVocabBuilder)
+def sort_counts(self):
+    self.counts = sorted(self.rawcounts.values(), 
         key=attrgetter('total'),
         reverse=True)
 if RUN_SCRIPT:
-    sort_counts(info, runvars)
+    default_vocab_builder.sort_counts()
 
 
 # Show the tokens with the highest total counts and some random ones.
 
-# In[11]:
+# In[ ]:
 
 
 if RUN_SCRIPT:
-    nbbox()
-    num_tokens = 15
-    format_str = '| {} | {} | {} |'
-    split_line = [VocabItem('Random Tokens:','-','-')]
-    
-    nbprint(format_str.format('Token', 'Total', 'Documents'), prefix=False)
-    nbprint('|---|---|---|', prefix=False)
-    first_list = runvars['counts'][:num_tokens]
-    random_list = random.sample(runvars['counts'], num_tokens)
-    for vocab_item in first_list + split_line + random_list:
-        nbprint(format_str.format(vocab_item.token, vocab_item.total, vocab_item.document), prefix=False)
+    show_tokens(default_vocab_builder.counts,10)
 
 
 # ---
@@ -133,118 +148,153 @@ if RUN_SCRIPT:
 # ### `def filter_min_docs()`
 # Remove tokens occuring in less than `min_docs` documents.
 
-# In[12]:
+# In[ ]:
 
 
-def filter_min_docs(info, runvars):
-    min_docs = get_option(info, 'min_docs')
-    if min_docs:
-        min_docs = to_abs(min_docs, runvars['num_docs'])
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = [vocab_item for vocab_item in runvars['counts']
-                                if vocab_item.document >= min_docs]
+@add_method(DefaultVocabBuilder)
+def filter_min_docs(self):
+    if self.min_docs:
+        min_docs = self.to_abs(self.min_docs)
+        self.counts = [vocab_item 
+                       for vocab_item in self.counts
+                       if vocab_item.document >= min_docs]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
         nbprint('Removed {} tokens occuring in less than {} documents'
-              .format(old_length - len( runvars['counts']), min_docs))
+              .format(num_removed, min_docs))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_min_docs(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_min_docs()
 
 
 # ### `def filter_max_docs()`
 # Remove tokens occuring in more than `max_docs` documents.
 
-# In[13]:
+# In[ ]:
 
 
-def filter_max_docs(info, runvars):
-    max_docs = get_option(info, 'max_docs')
-    if max_docs:
-        max_docs = to_abs(max_docs, runvars['num_docs'])
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = [vocab_item for vocab_item in runvars['counts']
-                                if vocab_item.document <= max_docs]
+@add_method(DefaultVocabBuilder)
+def filter_max_docs(self):
+    if self.max_docs:
+        max_docs = self.to_abs(self.max_docs)
+        self.counts = [vocab_item 
+                       for vocab_item in self.counts
+                       if vocab_item.document <= max_docs]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
         nbprint('Removed {} tokens occuring in more than {} documents'
-              .format(old_length - len( runvars['counts']), max_docs))
+              .format(num_removed, max_docs))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_max_docs(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_max_docs()
 
 
 # ### `def filter_min_count()`
 # Remove tokens occuring less than `min_count` times in total.
 
-# In[14]:
+# In[ ]:
 
 
-def filter_min_count(info, runvars):
-    min_count = get_option(info, 'min_count')
-    if min_count:
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = [vocab_item for vocab_item in runvars['counts']
-                                if vocab_item.total >= min_count]
+@add_method(DefaultVocabBuilder)
+def filter_min_count(self):
+    if self.min_count:
+        min_count = self.to_abs(self.min_count)
+        self.counts = [vocab_item 
+                       for vocab_item in self.counts
+                       if vocab_item.total >= min_count]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
         nbprint('Removed {} tokens occuring less than {} times in total.'
-              .format(old_length - len( runvars['counts']), min_count))
+              .format(num_removed, min_count))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_min_count(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_min_count()
+
+
+# ### `def filter_max_count()`
+# Remove tokens occuring less than `max_count` times in total.
+
+# In[ ]:
+
+
+@add_method(DefaultVocabBuilder)
+def filter_max_count(self):
+    if self.max_count:
+        max_count = self.to_abs(self.max_count)
+        self.counts = [vocab_item 
+                       for vocab_item in self.counts
+                       if vocab_item.total >= max_count]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
+        nbprint('Removed {} tokens occuring more than {} times in total.'
+              .format(num_removed, max_count))
+if RUN_SCRIPT:
+    with nbbox():
+        default_vocab_builder.filter_max_count()
 
 
 # ### `def filter_min_word_length()`
 # Remove tokens of length less than `min_word_length`.
 
-# In[10]:
+# In[ ]:
 
 
-def filter_min_word_length(info, runvars):
-    min_word_length = get_option(info, 'min_word_length')
-    if min_word_length:
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = [vocab_item for vocab_item in runvars['counts']
-                                if len(vocab_item.token) >= min_word_length]
-        nbprint('Removed {} tokens with length less than {}'
-              .format(old_length - len( runvars['counts']), min_word_length))
+@add_method(DefaultVocabBuilder)
+def filter_min_word_length(self):
+    if self.min_word_length:
+        self.counts = [vocab_item
+                       for vocab_item in self.counts
+                       if len(vocab_item.token) >= self.min_word_length]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
+        nbprint('Removed {} tokens with length less than {}.'
+              .format(num_removed, self.min_word_length))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_min_word_length(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_min_word_length()
 
 
 # ### `def filter_max_word_length()`
 # Remove tokens of length greater than `max_word_length`.
 
-# In[11]:
+# In[ ]:
 
 
-def filter_max_word_length(info, runvars):
-    max_word_length = get_option(info, 'max_word_length')
-    if max_word_length:
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = [vocab_item for vocab_item in runvars['counts']
-                                if len(vocab_item.token) <= max_word_length]
+@add_method(DefaultVocabBuilder)
+def filter_max_word_length(self):
+    if self.max_word_length:
+        self.counts = [vocab_item
+                       for vocab_item in self.counts
+                       if len(vocab_item.token) <= self.max_word_length]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
         nbprint('Removed {} tokens with length greater than {}'
-              .format(old_length - len( runvars['counts']), max_word_length))
+              .format(num_removed, self.max_word_length))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_max_word_length(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_max_word_length()
 
 
 # ### `def filter_stopwords()`
 # Remove tokens that are in the nltk stopword corpus `stopwords`.
 
-# In[12]:
+# In[ ]:
 
 
-def filter_stopwords(info, runvars):
-    stopwords_corpus_name = get_option(info, 'stopwords')
-    if stopwords_corpus_name:
-        stopword_corpus = set(stopwords.words(stopwords_corpus_name))
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = [vocab_item for vocab_item in runvars['counts']
-                                if vocab_item.token not in stopword_corpus]
+@add_method(DefaultVocabBuilder)
+def filter_stopwords(self):
+    if self.stopwords:
+        stopword_corpus = nltk_stopwords[self.stopwords]
+        self.counts = [vocab_item 
+                       for vocab_item in self.counts
+                       if vocab_item.token not in stopword_corpus]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
         nbprint('Removed {} tokens in the {} stopword corpus'
-              .format(old_length - len( runvars['counts']), stopwords_corpus_name))
+              .format(num_removed, self.stopwords))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_stopwords(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_stopwords()
 
 
 # ### `def filter_total_size()`
@@ -253,51 +303,47 @@ if RUN_SCRIPT:
 # In[ ]:
 
 
-def filter_total_size(info, runvars):
-    max_tokens = get_option(info, 'max_tokens')
-    if max_tokens:
-        old_length = len(runvars['counts'])
-        runvars['counts'][:] = runvars['counts'][:max_tokens]
+@add_method(DefaultVocabBuilder)
+def filter_total_size(self):
+    if self.max_tokens:
+        self.counts = self.counts[:self.max_tokens]
+        num_removed = self.num_tokens - len(self.counts)
+        self.num_tokens = len(self.counts)
         nbprint('Removed {} tokens to limit vocabulary size to {}'
-              .format(old_length - len( runvars['counts']), max_tokens))
+              .format(num_removed, self.max_tokens))
 if RUN_SCRIPT:
-    nbbox(mini = True)
-    filter_stopwords(info, runvars)
-
-
-# ### `def print_size()`
-# Add an `id` to each token in the final vocabulary
-
-# In[13]:
-
-
-def print_size(info, runvars):
-    nbprint('{} tokens in vocabulary.'
-          .format(len(runvars['counts'])))
-if RUN_SCRIPT:
-    nbbox(mini = True)
-    print_size(info, runvars)
+    with nbbox():
+        default_vocab_builder.filter_total_size()
 
 
 # ---
-# ## Build complete vocab functions
+# ## Complete function
 # ---
 
-# In[14]:
+# In[ ]:
 
 
-class DefaultVocabBuilder(VocabBuilder):
-    def build_vocab(self):
-        runvars = {}
-        count_tokens(self.info, runvars)
-        sort_counts(self.info, runvars)
-        filter_min_docs(self.info, runvars)
-        filter_max_docs(self.info, runvars)
-        filter_min_count(self.info, runvars)
-        filter_min_word_length(self.info, runvars)
-        filter_max_word_length(self.info, runvars)
-        filter_stopwords(self.info, runvars)
-        filter_total_size(self.info, runvars)
-        print_size(self.info, runvars)
-        self.counts = runvars['counts']
+@add_method(DefaultVocabBuilder)
+def build_vocab(self):
+    self.count_tokens()
+    self.sort_counts()
+    self.filter_min_docs()
+    self.filter_max_docs()
+    self.filter_min_count()
+    self.filter_max_count()
+    self.filter_min_word_length()
+    self.filter_max_word_length()
+    self.filter_stopwords()
+    self.filter_total_size()
+
+
+# ### Test vocab
+
+# In[ ]:
+
+
+if RUN_SCRIPT:
+    with nbbox():
+        default_vocab_builder.build_vocab()
+    show_tokens(default_vocab_builder.counts,10)
 

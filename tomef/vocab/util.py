@@ -1,5 +1,5 @@
-import data
-from base import nbprint
+from base import data
+from interface import nbprint
 
 from tokenizer.main import run_tokenizer
 
@@ -23,6 +23,11 @@ class VocabItem:
         self.total += count
     def increase_document(self, count = 1):
         self.document += count
+    def to_dict(self, id):
+        return {'id': id, 
+                'token': self.token, 
+                'total': self.total, 
+                'document': self.document}
         
 class VocabBuilder:
     def __init__(self, info):
@@ -32,5 +37,4 @@ class VocabBuilder:
         self.counts = []
     
     def get_vocab(self):
-        return [{'id': id, 'token': vi.token, 'total': vi.total, 'document': vi.document}
-                for id, vi in enumerate(self.counts)]
+        return [vi.to_dict(id) for id, vi in enumerate(self.counts)]
