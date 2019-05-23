@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
 
-import config
+from base import config
 from embedding.embedding_model import PhraseembeddingModel
 
 USEModelData = namedtuple('USEModelData', ['module', 'session'])

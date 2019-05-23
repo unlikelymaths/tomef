@@ -20,11 +20,8 @@ init_vars(vars(), ('info', {}), ('runvars', {}), ('num_docs', 400))
 import numpy as np
 from scipy import sparse
 
-import data
-import config
-from base import nbprint
-from util import ProgressIterator
-from widgetbase import nbbox
+from base import data, config
+from interface import nbprint, nbbox, ProgressIterator
 
 from embedding.main import get_model
 from embedding.common import OOVException
@@ -46,8 +43,8 @@ if RUN_SCRIPT: cbow_vector_picker(info)
 
 
 if RUN_SCRIPT:
-    nbbox(mini=True)
-    make_term_doc_mat_count(info, runvars)
+    with nbbox():
+        make_term_doc_mat_count(info, runvars)
 
 
 # ---
@@ -85,9 +82,9 @@ def make_cbow_mat_tf_idf(info, runvars):
     runvars['cbow_mat'] = cbow_tf_idf
 
 if RUN_SCRIPT and info['vector_info']['type'] == 'TfIdf':
-    nbbox(mini=True)
-    make_cbow_mat_tf_idf(info, runvars)
-    plot_matrix(runvars['cbow_mat'][:,1:num_docs])
+    with nbbox():
+        make_cbow_mat_tf_idf(info, runvars)
+        plot_matrix(runvars['cbow_mat'][:,1:num_docs])
 
 
 # ---
@@ -143,9 +140,9 @@ def make_cbow_mat_minmaxmean(info, runvars):
     runvars['cbow_mat'] = cbow_mat
 
 if RUN_SCRIPT and info['vector_info']['type'] == 'MinMaxMean':
-    nbbox(mini=True)
-    make_cbow_mat_minmaxmean(info, runvars)
-    plot_matrix(runvars['cbow_mat'][:,1:num_docs])
+    with nbbox():
+        make_cbow_mat_minmaxmean(info, runvars)
+        plot_matrix(runvars['cbow_mat'][:,1:num_docs])
 
 
 # ---
@@ -190,10 +187,10 @@ def fv_mean_var_vectors(info, runvars):
     runvars['var_vec'] = np.maximum(0.001, var_vec)
 
 if RUN_SCRIPT and info['vector_info']['type'] == 'FV':
-    nbbox(mini=True)
-    fv_mean_var_vectors(info, runvars)
-    nbprint('Mean: {}...'.format(runvars['mean_vec'][:10]))
-    nbprint('Variance: {}...'.format(runvars['var_vec'][:10]))
+    with nbbox():
+        fv_mean_var_vectors(info, runvars)
+        nbprint('Mean: {}...'.format(runvars['mean_vec'][:10]))
+        nbprint('Variance: {}...'.format(runvars['var_vec'][:10]))
 
 
 # Build the FVs
@@ -239,9 +236,9 @@ def fv_build_mat(info, runvars):
     runvars['cbow_mat'] = fv_mat
     
 if RUN_SCRIPT and info['vector_info']['type'] == 'FV':
-    nbbox(mini=True)
-    fv_build_mat(info, runvars)
-    plot_matrix(runvars['cbow_mat'][:,1:num_docs])
+    with nbbox():
+        fv_build_mat(info, runvars)
+        plot_matrix(runvars['cbow_mat'][:,1:num_docs])
 
 
 # Make complete function

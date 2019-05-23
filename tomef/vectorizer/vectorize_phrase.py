@@ -20,11 +20,8 @@ init_vars(vars(), ('info', {}), ('runvars', {}), ('num_docs', 400), ('embedding_
 import numpy as np
 from scipy import sparse
 
-import data
-import config
-from base import nbprint
-from util import ProgressIterator
-from widgetbase import nbbox
+from base import data, config
+from interface import nbprint, nbbox, ProgressIterator
 
 from embedding.main import get_model
 
@@ -78,17 +75,7 @@ def make_phrase_mat(info, runvars):
     runvars['phrase_mat'] = phrase_mat
 
 if RUN_SCRIPT:
-    nbbox(mini=True)
-    make_phrase_mat(info, runvars)
-    plot_matrix(runvars['phrase_mat'][:embedding_dim,1:num_docs])
-
-
-# In[ ]:
-
-
-if RUN_SCRIPT:
-    from sklearn import decomposition
-    svd = decomposition.TruncatedSVD(n_components=20, n_iter=200, random_state=42)
-    X2 = svd.fit_transform(runvars['phrase_mat'].T)  
-    plot_matrix(X2.T[:,:num_docs])
+    with nbbox():
+        make_phrase_mat(info, runvars)
+        plot_matrix(runvars['phrase_mat'][:embedding_dim,1:num_docs])
 

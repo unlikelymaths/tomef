@@ -11,7 +11,7 @@
 # ## Setup and Settings
 # ---
 
-# In[1]:
+# In[ ]:
 
 
 from __init__ import init_vars
@@ -21,11 +21,8 @@ import numpy as np
 from scipy import sparse
 from collections import Counter
 
-import data
-import config
-from base import nbprint
-from util import ProgressIterator
-from widgetbase import nbbox
+from base import data, config
+from interface import nbprint, nbbox, ProgressIterator
 
 from tokenizer.common import split_tokens
 
@@ -41,7 +38,7 @@ if RUN_SCRIPT: bow_vector_picker(info)
 # ### Count Tokens and build matrix
 # Loads tokenized data and creates a sparse matrix of size number-of-terms by number-of-documents containing absolute counts as entries. Excludes empty documents and stores the ids of the documents in the matrix.
 
-# In[2]:
+# In[ ]:
 
 
 def make_term_doc_mat_count(info, runvars):
@@ -70,8 +67,8 @@ def make_term_doc_mat_count(info, runvars):
     runvars['term_doc_mat_count'] = sparse.coo_matrix((counts, (i, j)), shape=term_doc_mat_shape).tocsc()
     runvars['mat_ids'] = mat_ids
 if RUN_SCRIPT:
-    nbbox(mini=True)
-    make_term_doc_mat_count(info, runvars)
+    with nbbox():
+        make_term_doc_mat_count(info, runvars)
 
 
 # ### Term Frequency Matrix
@@ -90,7 +87,7 @@ if RUN_SCRIPT:
 # - `log`: Take the logarithm of the counts (plus one to avoid zero logarithm)
 # $$X_{i\,j} = \log(C_{i\,j} + 1)$$
 
-# In[3]:
+# In[ ]:
 
 
 def make_term_doc_mat_tf(info, runvars):
@@ -122,7 +119,7 @@ if RUN_SCRIPT:
 # $$I_{i\,j} = 1$$
 # - `idf`: logarithm
 
-# In[5]:
+# In[ ]:
 
 
 def make_term_doc_mat_idf(info, runvars):
@@ -145,7 +142,7 @@ if RUN_SCRIPT:
 # ## Build complete tokenizer function
 # ---
 
-# In[6]:
+# In[ ]:
 
 
 def make_term_doc_mat_tf_idf(info, runvars):

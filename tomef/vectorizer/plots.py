@@ -3,9 +3,7 @@ from IPython import get_ipython
 from scipy import sparse
 import numpy as np
 
-ipython = get_ipython()
-
-from base import nbprint
+from interface import nbprint
 
 def sort_matrix(matrix):
     new_matrix = np.reshape(matrix[:,0], (-1,1))
@@ -25,6 +23,7 @@ def sort_matrix(matrix):
     
 
 def plot_matrix(matrix):
+    ipython = get_ipython()
     ipython.magic("matplotlib inline")
     ipython.magic("config InlineBackend.figure_format = 'svg'")
     fig=plt.figure(figsize=(15, 15))
