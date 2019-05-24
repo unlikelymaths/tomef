@@ -41,6 +41,7 @@ def vocab_app():
     display(settings_box)
     output_box.display()
     vocab_nbbox.display()
+    update_output()
 
 def vocab_picker(info):
     output_box = DynamicHTML(update_display = False)
