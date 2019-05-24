@@ -63,13 +63,22 @@ def strip_info(info):
             stripped_info[entry] = info[entry]
     return stripped_info
         
+class Timer():
+    def __enter__(self):
+        self.start = time.time()
+        
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.end = time.time()
+        self.runtime = self.end - self.start
+    
 class ModuleTimer():
     """Provides timing of modules with automatic saving"""
     
-    def __init__(self, module, info):
+    def __init__(self, module, info, previous = None):
         self.module = module
         self.meta_file = '{}_timings'.format(module)
         self.info = strip_info(info)
+        self.previous = previous
     
     def __enter__(self):
         self.start = time.time()
@@ -81,6 +90,8 @@ class ModuleTimer():
         # Get runtime
         end = time.time()
         runtime = end - self.start
+        if self.previous is not None:
+            runtime = runtime + self.previous.runtime
         # Grab meta data entry
         meta_data = data.load_meta_data(self.meta_file)
         try:
